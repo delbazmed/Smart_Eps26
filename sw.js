@@ -1,5 +1,5 @@
 // Smart EPS Service Worker
-const CACHE_NAME = 'smart-eps-v1';
+const CACHE_NAME = 'smart-eps-v3';
 const FILES_TO_CACHE = [
   './',
   './index.html',
