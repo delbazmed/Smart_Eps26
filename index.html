@@ -2795,21 +2795,22 @@ render('home'); return;
     modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:24px;direction:rtl';
     modal.innerHTML = `
       <div style="background:var(--p1);border:1px solid var(--ln);border-radius:20px;padding:22px;max-width:380px;width:100%;text-align:center">
-        <div style="font-size:40px;margin-bottom:12px">💾</div>
-        <div style="font-size:16px;font-weight:900;color:var(--tx);margin-bottom:8px">استرداد البيانات</div>
+        <div style="font-size:48px;margin-bottom:12px">🏆</div>
+        <div style="font-size:18px;font-weight:900;color:var(--gold);margin-bottom:8px">مرحباً بك في Smart EPS</div>
         <div style="font-size:12px;color:var(--tx2);margin-bottom:20px;line-height:1.7">
-          لم يُعثر على بيانات تلقائية.<br>
-          هل لديك ملف نسخة احتياطية (JSON) سبق تصديره؟
+          هذه أول مرة تفتح فيها التطبيق.<br>
+          هل لديك ملف نسخة احتياطية (JSON) لاستعادتها؟<br>
+          أم تريد البدء من الصفر؟
         </div>
+        <button onclick="this.parentElement.parentElement.remove()" 
+          style="width:100%;padding:13px;background:linear-gradient(135deg,#daa520,#ffd700);border:none;border-radius:12px;color:#1a3a1f;font-size:13px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:var(--ff)">
+          🚀 ابدأ تطبيقاً جديداً
+        </button>
         <button onclick="document.getElementById('restore-inp').click()" 
-          style="width:100%;padding:13px;background:var(--g);border:none;border-radius:12px;color:#fff;font-size:13px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:var(--ff)">
-          📂 استعادة من ملف JSON
+          style="width:100%;padding:11px;background:transparent;border:1px solid var(--ln);border-radius:12px;color:var(--tx2);font-size:12px;cursor:pointer;font-family:var(--ff)">
+          📂 لدي نسخة احتياطية
         </button>
         <input id="restore-inp" type="file" accept=".json" style="display:none" onchange="emergencyRestore(this)">
-        <button onclick="this.parentElement.parentElement.remove()" 
-          style="width:100%;padding:11px;background:transparent;border:1px solid var(--ln);border-radius:12px;color:var(--tx3);font-size:12px;cursor:pointer;font-family:var(--ff)">
-          ابدأ من جديد
-        </button>
       </div>`;
     document.body.appendChild(modal);
   }, 1200);
