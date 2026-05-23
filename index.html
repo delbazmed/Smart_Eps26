@@ -384,6 +384,21 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
 .sw4-lnum{font-size:9px;font-weight:900;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase}
 .sw4-sc{font-family:var(--fn);font-size:22px;font-weight:900;color:rgba(255,255,255,.2);min-height:24px;transition:color .3s,text-shadow .3s}
 .sw4-sti{font-size:10px;color:rgba(255,255,255,.35);font-weight:600;text-align:center;min-height:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+
+/* ── Pedagogical Card System ── */
+.pcard-wrap{display:flex;gap:3px;align-items:center;flex-shrink:0}
+.pcard{width:26px;height:26px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:transform .15s,box-shadow .15s;touch-action:manipulation;flex-shrink:0}
+.pcard:active{transform:scale(.85)}
+.pcard.pc-g{background:rgba(0,217,126,.15);color:#00d97e;box-shadow:0 0 0 1.5px rgba(0,217,126,.3)}
+.pcard.pc-y{background:rgba(245,185,50,.15);color:#f5b932;box-shadow:0 0 0 1.5px rgba(245,185,50,.3)}
+.pcard.pc-r{background:rgba(255,89,89,.15);color:#ff5959;box-shadow:0 0 0 1.5px rgba(255,89,89,.3)}
+.pcard.pc-g:hover,.pcard.pc-g:active{background:rgba(0,217,126,.3);box-shadow:0 0 8px rgba(0,217,126,.4)}
+.pcard.pc-y:hover,.pcard.pc-y:active{background:rgba(245,185,50,.3);box-shadow:0 0 8px rgba(245,185,50,.4)}
+.pcard.pc-r:hover,.pcard.pc-r:active{background:rgba(255,89,89,.3);box-shadow:0 0 8px rgba(255,89,89,.4)}
+/* ── Captain System ── */
+.srow-wrap.captain{border:1.5px solid rgba(0,217,126,.5);border-radius:var(--r);background:rgba(0,217,126,.04);box-shadow:0 0 12px rgba(0,217,126,.12)}
+.cap-btn{width:26px;height:26px;border-radius:50%;background:rgba(218,165,32,.12);border:1.5px solid rgba(218,165,32,.25);color:#daa520;font-size:13px;cursor:pointer;transition:all .15s;touch-action:manipulation;flex-shrink:0}
+.cap-btn.on{background:rgba(218,165,32,.25);border-color:#daa520;box-shadow:0 0 8px rgba(218,165,32,.35)}
 </style>
 </head>
 <body>
@@ -601,9 +616,7 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
       <div style="font-size:12px;color:var(--tx2);font-weight:500;margin-bottom:16px;line-height:1.7;background:var(--p3);padding:12px;border-radius:var(--r)">📌 حدد النشاط الفردي والجماعي لكل فصل دراسي. سيُطبَّق تلقائياً على جميع الأقسام عند التقييم.</div>
       <div id="acts-body-inline"></div>
       <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-g btn-fw" onclick="saveActSelInline()"><svg><use href="#i-chk"/></svg>حفظ الأنشطة</button>
-        <button class="btn btn-gh btn-fw" onclick="openExemptionList()" style="background:rgba(232,121,249,.12);border-color:rgba(232,121,249,.3);color:var(--pnk)">📋 قائمة المعفيين</button>
-      </div>
+        <button class="btn btn-g btn-fw" onclick="saveActSelInline()"><svg><use href="#i-chk"/></svg>حفظ الأنشطة</button></div>
     </div>
     <div class="sp28"></div>
   </div>
@@ -1145,6 +1158,12 @@ function rHome(){
             '<div class="sme">'+(s.gender==='male'?'ذكر 👦':'أنثى 👧')+(s.phone?' · '+s.phone:'')+'</div>'+
           '</div>'+
           '<div style="display:flex;align-items:center;margin-left:4px">'+scoreHtml+'</div>'+
+          '<button class="cap-btn'+(s.captain?' on':'')+'" onclick="event.stopPropagation();toggleCaptain(\''+s.id+'\')" title="تعيين قائد فوج">'+(s.captain?'👑':'○')+'</button>'+
+          '<div class="pcard-wrap">'+
+            '<button class="pcard pc-g" onclick="event.stopPropagation();stuCard(\''+s.id+'\',\'g\')" title="بطاقة خضراء">🟢</button>'+
+            '<button class="pcard pc-y" onclick="event.stopPropagation();stuCard(\''+s.id+'\',\'y\')" title="بطاقة صفراء">🟡</button>'+
+            '<button class="pcard pc-r" onclick="event.stopPropagation();stuCard(\''+s.id+'\',\'r\')" title="بطاقة حمراء">🔴</button>'+
+          '</div>'+
           '<div style="display:flex;flex-direction:column;gap:2px;margin:0 4px">'+
             '<button class="ord-btn" onclick="event.stopPropagation();stuMoveUp(\''+s.id+'\')" '+(sIdx===0?'disabled':'')+'>'+(sIdx===0?'⋯':'▲')+'</button>'+
             '<button class="ord-btn" onclick="event.stopPropagation();stuMoveDown(\''+s.id+'\')" '+(sIdx===clsStus.length-1?'disabled':'')+'>'+(sIdx===clsStus.length-1?'⋯':'▼')+'</button>'+
@@ -3290,12 +3309,6 @@ function sw4ResetState(){
   }
 }
 
-function closeExemptionList(){
-  var o=document.getElementById('exl-overlay');
-  if(o){o.style.opacity='0';setTimeout(function(){if(o.parentNode)o.parentNode.removeChild(o);},300);}
-}
-function openExemptionList(){
-  // Collect data
   var groups=[];
   D.classes.forEach(function(cls){
     var rows=[];
@@ -3349,93 +3362,6 @@ function openExemptionList(){
     });
   }
 
-  document.body.appendChild(overlay);
-  // Set body content after append
-  var bodyEl=overlay.querySelector('#exl-body');
-  if(bodyEl)bodyEl.innerHTML=body_html;
-  requestAnimationFrame(function(){overlay.style.opacity='1';});
-}
-function printExemptionList(){
-  var sch=D.settings.school||'الثانوية';
-  var yr=D.settings.year||'\u2014';
-  // Collect exemption data (ALL classes)
-  var rows=[];
-  D.classes.forEach(function(cls){
-    var stus=D.students.filter(function(s){return s.classId===cls.id;});
-    stus.forEach(function(s){
-      initStu(s);
-      var terms=[];
-      if(s.terms.t1.exempted)terms.push('الفصل 1');
-      if(s.terms.t2.exempted)terms.push('الفصل 2');
-      if(s.terms.t3.exempted)terms.push('الفصل 3');
-      if(terms.length){
-        rows.push({
-          name:s.name,
-          gender:s.gender==='male'?'ذكر':'أنثى',
-          cls:cls.name+' ('+LVL[cls.level]+')',
-          terms:terms.join(' / ')
-        });
-      }
-    });
-  });
-  if(!rows.length){toast('معلومة','لا يوجد معفيون','su');return;}
-  // Build HTML  
-  var tbody='';
-  rows.forEach(function(r,i){
-    tbody+='<tr><td>'+(i+1)+'</td><td style="text-align:right">'+r.name+'</td><td>'+r.gender+'</td><td>'+r.cls+'</td><td style="font-weight:700;color:#c0392b">'+r.terms+'</td></tr>';
-  });
-  var html='<div class="page"><div class="watermark">'+sch+'</div>'+
-    '<div style="text-align:center;border-bottom:2px solid #c0392b;padding-bottom:8px;margin-bottom:14px"><div style="font-size:14px;font-weight:800;color:#c0392b">'+sch+'</div><div style="font-size:11px;color:#555;margin-top:2px">السنة الدراسية: '+yr+'</div></div>'+
-    '<h1 style="color:#c0392b">قائمة التلاميذ المعفيين</h1>'+
-    '<h2>مادة التربية البدنية والرياضية</h2>'+
-    '<div class="info-row" style="margin-bottom:14px"><span><strong>عدد المعفيين:</strong> '+rows.length+'</span><span><strong>التاريخ:</strong> '+new Date().toLocaleDateString('ar-DZ')+'</span></div>'+
-    '<table><thead><tr><th style="background:#c0392b">الرقم</th><th style="background:#c0392b">الاسم واللقب</th><th style="background:#c0392b">الجنس</th><th style="background:#c0392b">القسم</th><th style="background:#c0392b">الإعفاء</th></tr></thead><tbody>'+tbody+'</tbody></table>'+
-    '<div class="footer">'+
-    '<div class="sig-box"><div>أستاذ التربية البدنية والرياضية</div><div class="sig-line"></div><div style="font-weight:700">دلباز محمد</div></div>'+
-    '<div class="sig-box"><div>مستشار التربية</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
-    '<div class="sig-box"><div>الناظر</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
-    '</div></div>';
-  openGradeSheetPDF(html,'قائمة المعفيين \u2014 '+sch);
-}
-
-function openExemptionList(){
-  var scope=D.classes;
-  var groups=[];
-  scope.forEach(function(cls){
-    var stus=D.students.filter(function(s){return s.classId===cls.id;});
-    var clsRows=[];
-    stus.forEach(function(s){
-      initStu(s);
-      var terms=[];
-      ['t1','t2','t3'].forEach(function(tk){if(s.terms[tk].exempted)terms.push(TLB[tk]);});
-      if(terms.length)clsRows.push({name:s.name,gender:s.gender,terms:terms});
-    });
-    if(clsRows.length)groups.push({cls:cls,rows:clsRows});
-  });
-  var totalCount=0;groups.forEach(function(g){totalCount+=g.rows.length;});
-  var scopeLabel='كل الأقسام';
-  var bodyHTML='';
-  if(!totalCount){
-    bodyHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:12px">\u2705</div><div style="color:var(--tx2);font-size:14px;font-weight:700">لا يوجد معفيون</div><div style="color:var(--tx3);font-size:11px;margin-top:6px">في النطاق المحدد</div></div>';
-  }else{
-    groups.forEach(function(g){
-      bodyHTML+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:900;color:var(--g);background:var(--p3);padding:8px 12px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center"><span>'+g.cls.name+' \u00b7 '+LVL[g.cls.level]+'</span><span style="background:var(--gb);color:var(--gold);padding:2px 8px;border-radius:6px;font-size:10px">'+g.rows.length+'</span></div>';
-      g.rows.forEach(function(r){
-        var emoji=r.gender==='male'?'\ud83d\udc66':'\ud83d\udc67';
-        var color=r.gender==='male'?'var(--blu)':'var(--pnk)';
-        var bg=r.gender==='male'?'rgba(78,165,255,.1)':'rgba(232,121,249,.1)';
-        var termsHTML=r.terms.map(function(t){return '<span style="background:'+bg+';color:'+color+';padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700">'+t+'</span>';}).join(' ');
-        bodyHTML+='<div style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid var(--ln)"><div style="width:36px;height:36px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+emoji+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.name+'</div><div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">'+termsHTML+'</div></div></div>';
-      });
-      bodyHTML+='</div>';
-    });
-  }
-  var ov=document.getElementById('ov-exl');
-  if(!ov){ov=document.createElement('div');ov.id='ov-exl';document.body.appendChild(ov);}
-  ov.onclick=function(e){if(e.target===ov)closeExemptionList();};
-  ov.innerHTML='<div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--p2)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udccb</span><div><div style="font-size:13px;font-weight:900;color:var(--tx)">المعفيون \u2014 '+scopeLabel+'</div><div style="font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px">'+totalCount+' حالة إعفاء</div></div></div><div style="display:flex;gap:6px"><button onclick="printExemptionList()" title="تحميل وطباعة PDF" style="width:34px;height:34px;background:rgba(0,217,126,.12);border:1px solid rgba(0,217,126,.3);border-radius:9px;color:var(--g);font-size:14px;cursor:pointer;font-weight:900">🖨️</button><button onclick="closeExemptionList()" style="width:34px;height:34px;background:var(--rb);border:1px solid rgba(255,89,89,.3);border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">&#x2715;</button></div></div><div style="overflow-y:auto;flex:1;padding:12px 14px;-webkit-overflow-scrolling:touch">'+bodyHTML+'</div></div></div>';
-  ov.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10000;justify-content:center;align-items:flex-end;backdrop-filter:blur(12px)';
-}
 
 
 // ═══════════════════════════════════════════════════════
@@ -3752,7 +3678,106 @@ function selectClassFromGrid(cid){S.cid=cid;closeClassGrid();rHome();setTimeout(
   document.addEventListener('touchstart',function(e){},{ passive:true });
 })();
 
+
+
+
+// ─── Pedagogical Card System ───────────────────────────────
+function stuCard(sid,color){
+  var stu=GS(sid);if(!stu)return;
+  initStu(stu);
+  var tk=S.term||'t1';
+  var mc=stu.terms[tk].mc;
+  if(color==='g'){
+    mc.participation=Math.min(2,parseFloat(mc.participation||0)+0.5);
+    toast('🟢 بطاقة خضراء',stu.name+' — مشاركة +0.5','su',1500);
+  }else if(color==='y'){
+    mc.discipline=Math.max(0,parseFloat(mc.discipline||0)-0.5);
+    toast('🟡 بطاقة صفراء',stu.name+' — انضباط −0.5','wa',1500);
+  }else if(color==='r'){
+    mc.participation=0;mc.discipline=0;
+    toast('🔴 بطاقة حمراء',stu.name+' — عزل الحصة','er',2500);
+  }
+  snapshot('بطاقة سلوك');SD();
+}
+
+// ─── Captaincy Role Allocator ──────────────────────────────
+function toggleCaptain(sid){
+  var stu=GS(sid);if(!stu)return;
+  initStu(stu);
+  var tk=S.term||'t1';
+  var mc=stu.terms[tk].mc;
+  var becoming=!stu.captain;
+  if(becoming&&S.cid){
+    D.students.filter(function(s){return s.classId===S.cid&&s.id!==sid;}).forEach(function(s){
+      if(s.captain){s.captain=false;initStu(s);s.terms[tk].mc.creativity=Math.max(0,(parseFloat(s.terms[tk].mc.creativity)||0)-1);}
+    });
+  }
+  stu.captain=becoming;
+  if(becoming){
+    mc.creativity=Math.min(2,(parseFloat(mc.creativity)||0)+1);
+    toast('👑 قائد الفوج',stu.name+' — إبداع +1','su',2000);
+    openCaptainSheet(sid);
+  }else{
+    mc.creativity=Math.max(0,(parseFloat(mc.creativity)||0)-1);
+    toast('○ إلغاء القيادة',stu.name,'wa',1500);
+  }
+  snapshot('قائد فوج');SD();rHome();
+}
+
+function closeCaptainSheet(){var o=document.getElementById('captain-sheet');if(o)o.remove();}
+function openCaptainSheet(sid){
+  var stu=GS(sid);var cls=GC(stu.classId);if(!stu||!cls)return;
+  var old=document.getElementById('captain-sheet');if(old)old.remove();
+  var ov=document.createElement('div');
+  ov.id='captain-sheet';
+  ov.style.cssText='position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:flex-end;backdrop-filter:blur(8px)';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.innerHTML=
+    '<div style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden">'+
+    '<div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;gap:10px;background:rgba(218,165,32,.08)">'+
+    '<span style="font-size:24px">👑</span>'+
+    '<div style="flex:1"><div style="font-size:14px;font-weight:900;color:var(--gold)">بطاقة مهام القائد</div>'+
+    '<div style="font-size:11px;color:var(--tx3)">'+stu.name+' · '+cls.name+'</div></div>'+
+    '<button onclick="closeCaptainSheet()" style="width:34px;height:34px;background:var(--rb);border:none;border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">✕</button>'+
+    '</div>'+
+    '<div style="overflow-y:auto;flex:1;padding:16px">'+
+    '<div style="display:flex;flex-direction:column;gap:10px">'+
+    '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--g)">'+
+      '<div style="font-size:11px;font-weight:900;color:var(--g);margin-bottom:6px">🏃 قيادة الإحماء</div>'+
+      '<div style="font-size:12px;color:var(--tx2)">يقود '+stu.name+' الإحماء الديناميكي 7 دقائق قبل الحصة</div></div>'+
+    '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--blu)">'+
+      '<div style="font-size:11px;font-weight:900;color:var(--blu);margin-bottom:6px">⏱️ إدارة الوقت</div>'+
+      '<div style="font-size:12px;color:var(--tx2)">مسؤول عن توقيت المحطات وإبلاغ الأستاذ</div></div>'+
+    '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--gold)">'+
+      '<div style="font-size:11px;font-weight:900;color:var(--gold);margin-bottom:6px">📋 تسجيل الأداء</div>'+
+      '<div style="font-size:12px;color:var(--tx2)">يسجل نتائج المحطات الفرعية ويبلغ الأستاذ</div></div>'+
+    '<div style="background:rgba(218,165,32,.08);border-radius:12px;padding:10px 14px;border:1px solid rgba(218,165,32,.2)">'+
+      '<div style="font-size:11px;font-weight:900;color:var(--gold)">🏆 المكافأة التلقائية</div>'+
+      '<div style="font-size:12px;color:var(--tx2);margin-top:4px">تمت إضافة <strong>+1 إبداع</strong> للمراقبة المستمرة</div>'+
+    '</div></div></div></div>';
+  document.body.appendChild(ov);
+}
+
+// ── Volume Key Hardware Buttons ──────────────────────────────
+(function(){
+  var _lv={k:-1,t:0};
+  document.addEventListener('keydown',function(e){
+    if(!SW4.running)return;
+    var lane=-1;
+    if(e.code==='AudioVolumeUp'||e.key==='AudioVolumeUp')lane=0;
+    else if(e.code==='AudioVolumeDown'||e.key==='AudioVolumeDown')lane=1;
+    if(lane===-1)return;
+    e.preventDefault();e.stopPropagation();
+    var now=performance.now();
+    if(_lv.k===lane&&now-_lv.t<500)return;
+    _lv={k:lane,t:now};
+    sw4StopLane(lane);
+    toast('🔒','حارة '+(lane+1)+'  مفتاح الصوت','su',1200);
+  },{passive:false});
+})();
+
 render('home');
+
 
 </script>
 <script>
