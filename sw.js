@@ -1,40 +1,29 @@
-// Smart EPS Service Worker
-const CACHE_NAME = 'smart-eps-v3';
-const FILES_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
-];
+// Smart EPS Service Worker - Network First Strategy
+const CACHE = 'smart-eps-v4';
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
-  );
-  self.skipWaiting();
+  self.skipWaiting(); // activate immediately
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.map(k => caches.delete(k))) // delete ALL old caches
     )
   );
   self.clients.claim();
 });
 
+// Network First - always try network, fallback to cache
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(resp => {
-        if (!resp || resp.status !== 200 || resp.type !== 'basic') return resp;
-        const respClone = resp.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, respClone));
+    fetch(e.request)
+      .then(resp => {
+        const clone = resp.clone();
+        caches.open(CACHE).then(cache => cache.put(e.request, clone));
         return resp;
-      }).catch(() => caches.match('./index.html'));
-    })
+      })
+      .catch(() => caches.match(e.request))
   );
 });

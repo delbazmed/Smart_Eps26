@@ -2765,6 +2765,241 @@ function emergencyRestore(inp){
 }
 
 // ═══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// DUAL-ACOUSTIC ENGINE v2
+// Phase 1: Whistle Detection (3-4kHz bandpass, 150ms sustained)
+// Phase 2: French Voice Commands (fr-FR) for lane freeze
+// ══════════════════════════════════════════════════════════════
+
+var WHISTLE={
+  ctx:null,stream:null,analyser:null,source:null,filter:null,
+  active:false,rafId:null,
+  peakStartTime:null,      // when peak first detected
+  SUSTAIN_MS:150,          // must sustain 150ms
+  PEAK_THRESHOLD:85,       // amplitude 0-255
+  SNR_MIN:30,              // peak must exceed noise by this
+  minBin:0,maxBin:0
+};
+
+var VOICE={
+  rec:null,active:false,manualStop:false,_errorCount:0,
+  // French keywords per lane (fr-FR phonetic variants)
+  keywords:[
+    ['un','une','1','one','an'],           // Lane 0
+    ['deux','deu','de','2','doux'],        // Lane 1
+    ['trois','troi','twa','3'],            // Lane 2
+    ['quatre','katr','kat','4','catre']    // Lane 3
+  ]
+};
+
+// ── Phase 1: Start whistle detection ──────────────────────────
+function sw4ToggleWhistle(){
+  if(WHISTLE.active){sw4StopWhistle();return;}
+  if(SW4.running){toast('تنبيه','الكرونومتر يعمل بالفعل','wa');return;}
+  var btn=document.getElementById('sw4-whistle-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='⏳ جاري الإعداد...';}
+
+  navigator.mediaDevices.getUserMedia({
+    audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}
+  }).then(function(stream){
+    try{
+      WHISTLE.stream=stream;
+      var AC=window.AudioContext||window.webkitAudioContext;
+      WHISTLE.ctx=new AC();
+      WHISTLE.source=WHISTLE.ctx.createMediaStreamSource(stream);
+
+      // Strict bandpass: center=3500Hz, Q=6 (tight)
+      WHISTLE.filter=WHISTLE.ctx.createBiquadFilter();
+      WHISTLE.filter.type='bandpass';
+      WHISTLE.filter.frequency.value=3500;
+      WHISTLE.filter.Q.value=6;
+
+      // High-res analyser
+      WHISTLE.analyser=WHISTLE.ctx.createAnalyser();
+      WHISTLE.analyser.fftSize=2048;
+      WHISTLE.analyser.smoothingTimeConstant=0.1;
+
+      // source → bandpass → analyser (silent - no destination)
+      WHISTLE.source.connect(WHISTLE.filter);
+      WHISTLE.filter.connect(WHISTLE.analyser);
+
+      // Compute 3-4 kHz bins
+      var sr=WHISTLE.ctx.sampleRate;
+      var binHz=sr/WHISTLE.analyser.fftSize;
+      WHISTLE.minBin=Math.floor(3000/binHz);
+      WHISTLE.maxBin=Math.ceil(4000/binHz);
+      WHISTLE.active=true;
+      WHISTLE.peakStartTime=null;
+
+      if(btn){btn.disabled=false;btn.innerHTML='🎙️ ينصت للصافرة (اضغط للإلغاء)';btn.style.background='linear-gradient(135deg,#e67e22,#d35400)';}
+      sw4ShowWhistleStatus('🎙️ انصت... أنفخ بقوة 150ms+ في الصافرة');
+      WHISTLE.rafId=requestAnimationFrame(sw4WhistleLoop);
+    }catch(err){
+      console.error('Whistle setup:',err);
+      sw4StopWhistle();
+      toast('خطأ','تعذر إعداد كاشف الصافرة','er');
+    }
+  }).catch(function(err){
+    if(btn){btn.disabled=false;btn.innerHTML='🎤 انطلاق بالصافرة';}
+    toast('مرفوض','السماح للميكروفون مطلوب','er');
+  });
+}
+
+function sw4WhistleLoop(){
+  if(!WHISTLE.active||!WHISTLE.analyser)return;
+  var buf=new Uint8Array(WHISTLE.analyser.frequencyBinCount);
+  WHISTLE.analyser.getByteFrequencyData(buf);
+
+  // Peak in 3-4kHz band
+  var peak=0;
+  for(var i=WHISTLE.minBin;i<=WHISTLE.maxBin;i++){if(buf[i]>peak)peak=buf[i];}
+
+  // Average noise OUTSIDE whistle band (below 2kHz + above 5kHz)
+  var noise=0,nc=0;
+  var maxNoiseBin=Math.floor(2000/(WHISTLE.ctx.sampleRate/WHISTLE.analyser.fftSize));
+  var minNoiseBinHi=Math.ceil(5000/(WHISTLE.ctx.sampleRate/WHISTLE.analyser.fftSize));
+  for(var j=0;j<maxNoiseBin;j++){noise+=buf[j];nc++;}
+  for(var k=minNoiseBinHi;k<buf.length;k++){noise+=buf[k];nc++;}
+  if(nc>0)noise/=nc;
+
+  var snr=peak-noise;
+  var isWhistle=(peak>=WHISTLE.PEAK_THRESHOLD&&snr>=WHISTLE.SNR_MIN);
+  var now=performance.now();
+
+  if(isWhistle){
+    if(!WHISTLE.peakStartTime)WHISTLE.peakStartTime=now;
+    var sustained=now-WHISTLE.peakStartTime;
+    // Visual bar
+    if(!WHISTLE._f)WHISTLE._f=0;WHISTLE._f++;
+    if(WHISTLE._f%3===0){
+      var pct=Math.min(100,Math.round((sustained/WHISTLE.SUSTAIN_MS)*100));
+      sw4ShowWhistleStatus('🔊 صافرة رُصدت... '+pct+'%');
+    }
+    // Sustained 150ms = fire!
+    if(sustained>=WHISTLE.SUSTAIN_MS){
+      sw4WhistleFired(now-sustained); // use START of sustained peak
+      return;
+    }
+  }else{
+    WHISTLE.peakStartTime=null; // reset if drops below threshold
+  }
+
+  WHISTLE.rafId=requestAnimationFrame(sw4WhistleLoop);
+}
+
+function sw4WhistleFired(startT){
+  var t=startT||performance.now();
+  sw4ShowWhistleStatus('🚦 انطلق!');
+  sw4StopWhistle(true); // free mic
+  SW4.startT=t;
+  SW4._fromWhistle=true;
+  sw4Start();
+  toast('🚦 انطلاق!','الصافرة رُصدت — قل رقم الحارة بالفرنسية','su',2500);
+}
+
+function sw4StopWhistle(keepStream){
+  WHISTLE.active=false;WHISTLE.peakStartTime=null;WHISTLE._f=0;
+  if(WHISTLE.rafId){cancelAnimationFrame(WHISTLE.rafId);WHISTLE.rafId=null;}
+  try{if(WHISTLE.source)WHISTLE.source.disconnect();}catch(e){}
+  try{if(WHISTLE.filter)WHISTLE.filter.disconnect();}catch(e){}
+  try{if(WHISTLE.analyser)WHISTLE.analyser.disconnect();}catch(e){}
+  if(!keepStream){
+    try{if(WHISTLE.stream)WHISTLE.stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    try{if(WHISTLE.ctx)WHISTLE.ctx.close();}catch(e){}
+    WHISTLE.stream=null;WHISTLE.ctx=null;
+  }
+  var btn=document.getElementById('sw4-whistle-btn');
+  if(btn){btn.disabled=false;btn.innerHTML='🎤 انطلاق بالصافرة';btn.style.background='linear-gradient(135deg,#f39c12,#f1c40f)';}
+  if(!keepStream)sw4HideWhistleStatus();
+}
+
+// ── Phase 2: French Voice Commands ────────────────────────────
+function sw4StartVoiceListen(){
+  if(VOICE.active)return;
+  var SRA=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SRA){sw4ShowWhistleStatus('⚠️ SpeechRecognition غير مدعوم');return;}
+
+  // Pre-warm mic permission
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    stream.getTracks().forEach(function(t){t.stop();});
+    setTimeout(function(){sw4_buildRecognizer(SRA);},200);
+  }).catch(function(){
+    sw4_buildRecognizer(SRA); // try anyway
+  });
+}
+
+function sw4_buildRecognizer(SRA){
+  try{
+    VOICE.rec=new SRA();
+    VOICE.rec.lang='fr-FR';
+    VOICE.rec.continuous=true;
+    VOICE.rec.interimResults=true;
+    VOICE.rec.maxAlternatives=2;
+    VOICE.manualStop=false;
+    VOICE._errorCount=0;
+
+    VOICE.rec.onstart=function(){VOICE.active=true;sw4ShowWhistleStatus('🎙️ قل رقم الحارة: un/deux/trois/quatre');};
+
+    VOICE.rec.onresult=function(ev){
+      var detectedAt=performance.now();
+      for(var i=ev.resultIndex;i<ev.results.length;i++){
+        var t=ev.results[i][0].transcript.toLowerCase().trim();
+        if(t.length<1)continue;
+        if(sw4ProcessVoice(t,detectedAt))break;
+      }
+    };
+
+    VOICE.rec.onerror=function(e){
+      VOICE._errorCount++;
+      if(e.error==='not-allowed'){VOICE.manualStop=true;sw4ShowWhistleStatus('⚠️ الميكروفون مرفوض');return;}
+      if(VOICE._errorCount>8){VOICE.manualStop=true;sw4ShowWhistleStatus('⚠️ التعرف غير مستقر - أوقف يدوياً');}
+    };
+
+    VOICE.rec.onend=function(){
+      VOICE.active=false;
+      if(VOICE.manualStop||!SW4.running)return;
+      // Check if all lanes done
+      var anyLeft=false;
+      for(var i=0;i<4;i++){
+        if(document.getElementById('sw4-sel-'+i)?.value&&!SW4.lanes[i].frozen){anyLeft=true;break;}
+      }
+      if(anyLeft){
+        setTimeout(function(){try{if(VOICE.rec&&!VOICE.manualStop)VOICE.rec.start();}catch(e){}},250);
+      }
+    };
+
+    VOICE.rec.start();
+  }catch(e){
+    console.error('Voice init:',e);
+    sw4ShowWhistleStatus('⚠️ فشل التعرف الصوتي - أوقف يدوياً');
+  }
+}
+
+function sw4ProcessVoice(transcript,detectedAt){
+  var now=performance.now();
+  if(!detectedAt)detectedAt=now;
+  for(var lane=0;lane<4;lane++){
+    var keys=VOICE.keywords[lane];
+    for(var k=0;k<keys.length;k++){
+      if(transcript.indexOf(keys[k])!==-1){
+        var sid=document.getElementById('sw4-sel-'+lane)?.value;
+        if(!sid||SW4.lanes[lane].frozen)return false;
+        sw4StopLane(lane,detectedAt-200); // 200ms latency compensation
+        sw4ShowWhistleStatus('🔒 حارة '+(lane+1)+' — '+keys[k]);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function sw4StopVoiceListen(){
+  VOICE.manualStop=true;VOICE.active=false;
+  try{if(VOICE.rec)VOICE.rec.stop();}catch(e){}
+  try{if(VOICE.rec)VOICE.rec.abort();}catch(e){}
+  VOICE.rec=null;
+}
+
 // ═══════════════════════════════════════
 // QR CODE — Class Info + Data Share
 // ═══════════════════════════════════════
@@ -2887,196 +3122,112 @@ function openSW4(term,etype){
 }
 
 // ═══════════════════════════════════════════════════════
-// PHASE 1: Acoustic Whistle Detection Engine
-// Web Audio API + Bandpass Filter (2-4 kHz)
-// ═══════════════════════════════════════════════════════
-var WHISTLE={
-  ctx:null,stream:null,analyser:null,source:null,filter:null,
-  active:false,rafId:null,
-  detectionThreshold:140,  // 0-255 amplitude threshold for whistle peak
-  minPeakFreqBin:0,maxPeakFreqBin:0,
-  ringMessageEl:null
-};
-
-
-// ═══════════════════════════════════════════════════════
-// PHASE 2: Voice Command Engine for Lane Freezing
-// SpeechRecognition (ar-DZ) - continuous listening
-// ═══════════════════════════════════════════════════════
-var VOICE={
-  rec:null,active:false,manualStop:false,
-  lastFreeze:{lane:-1,time:0},
-  // Latency compensation - SpeechRecognition typical lag in ms
-  latencyOffset:250,
-  // Algerian Arabic + MSA keyword variants per lane
-  keywords:[
-    // Lane 0 - "واحد"
-    ['واحد','واحدة','واحت','واحه','واحا','wahed','wahda','wahd','وحد','أوحد'],
-    // Lane 1 - "زوج" (dialect) or "اثنين"
-    ['زوج','زوزة','زوز','zooj','zoj','اثنين','اتنين','تنين','ثنين','جوج','جوز','إثنين'],
-    // Lane 2 - "تلاتة" (dialect) or "ثلاثة"
-    ['تلاتة','تلاثة','ثلاثة','ثلاث','ثلاتة','تلاث','tlata','talata','تلت','ثلت'],
-    // Lane 3 - "ربعة" (dialect) or "أربعة"
-    ['ربعة','ربعا','اربعة','اربع','رابعة','أربعة','أربع','رابع','arbaa','rba3a','ربع','رباعة']
-  ]
-};
-
-function sw4StartVoiceListen(){
-  if(VOICE.active)return;
-  var SRA=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SRA){
-    sw4ShowWhistleStatus('⚠️ التعرف الصوتي غير مدعوم - أوقف الحارات يدوياً');
-    return;
-  }
-  // Pre-warm microphone permission to avoid not-allowed error
-  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-      // Immediately stop the warm-up stream - SpeechRecognition will get its own
-      try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
-      // Now start recognition with permission granted
-      setTimeout(function(){sw4_initRecognition(SRA);},200);
-    }).catch(function(err){
-      console.error('Mic pre-warm error:',err);
-      sw4ShowWhistleStatus('⚠️ يجب السماح للميكروفون من إعدادات المتصفح');
-      toast('مرفوض','الميكروفون مرفوض - اسمح من إعدادات الموقع','er',4000);
-    });
-  }else{
-    sw4_initRecognition(SRA);
-  }
-}
-
-function sw4_initRecognition(SRA){
+// ═══════════════════════════════════════
+// QR CODE — Class Info + Data Share
+// ═══════════════════════════════════════
+function openQR(clsId){
   try{
-    VOICE.rec=new SRA();
-    VOICE.rec.lang='ar-DZ';
-    VOICE.rec.continuous=true;
-    VOICE.rec.interimResults=true;
-    VOICE.rec.maxAlternatives=1;
-    VOICE.manualStop=false;
-    VOICE._errorCount=0;
-    
-    VOICE.rec.onstart=function(){
-      VOICE.active=true;
-      VOICE._errorCount=0;
-      sw4ShowWhistleStatus('🎙️ ينصت للأوامر: قل رقم الحارة');
-    };
-    
-    VOICE.rec.onresult=function(event){
-      // Capture the EXACT time of speech detection (event timestamp)
-      var detectedAt=performance.now();
-      for(var i=event.resultIndex;i<event.results.length;i++){
-        // Process BOTH interim and final - interim catches fastest
-        var transcript=event.results[i][0].transcript.toLowerCase().trim();
-        if(transcript.length<1)continue;
-        if(sw4ProcessVoiceCmd(transcript,detectedAt))break;
+    var cid=clsId||S.cid;
+    var cls=GC(cid);
+    if(!cls){toast('تنبيه','اختر قسماً أولاً','wa');return;}
+    var stus=D.students.filter(function(s){return s.classId===cid;});
+    var males=stus.filter(function(s){return s.gender==='male';}).length;
+    var females=stus.length-males;
+    var canvas=document.getElementById('qr-canvas');
+    if(!canvas){toast('خطأ','نافذة QR غير موجودة','er');return;}
+    canvas.innerHTML='';
+    var info=document.getElementById('qr-info');
+    if(info)info.textContent=cls.name+' | '+LVL[cls.level]+' | '+stus.length+' تلميذ';
+    var sb=document.getElementById('qr-share-btn');
+    if(sb){sb.dataset.cid=cid;}
+    var pb=document.getElementById('qr-pdf-btn');
+    if(pb){pb.dataset.cid=cid;}
+    openOv('ov-qr');
+    setTimeout(function(){
+      if(typeof QRCode==='undefined'){
+        canvas.innerHTML='<div style="padding:30px;color:#c00;font-size:11px">مكتبة QR غير محملة</div>';
+        return;
       }
-    };
-    
-    VOICE.rec.onerror=function(e){
-      console.warn('Voice error:',e.error);
-      VOICE._errorCount=(VOICE._errorCount||0)+1;
-      if(e.error==='not-allowed'||e.error==='service-not-allowed'){
-        VOICE.manualStop=true;
-        sw4ShowWhistleStatus('⚠️ الميكروفون مرفوض - أوقف الحارات يدوياً');
-        toast('مرفوض','اسمح للميكروفون من إعدادات الموقع','er',4000);
-      }else if(e.error==='no-speech'||e.error==='audio-capture'||e.error==='aborted'){
-        // benign - will auto-restart via onend
-      }else if(VOICE._errorCount>5){
-        VOICE.manualStop=true;
-        sw4ShowWhistleStatus('⚠️ التعرف الصوتي غير مستقر - أوقف يدوياً');
+      try{
+        // Readable Arabic text card - scanners display this directly
+        var payload=
+          'الثانوية: '+(D.settings.school||'-')+'\n'+
+          'القسم: '+cls.name+' - '+LVL[cls.level]+'\n'+
+          'التلاميذ: '+stus.length+' (ذكور '+males+'/إناث '+females+')\n'+
+          'الموسم: '+(D.settings.year||'-')+'\n'+
+          'الأستاذ: دلباز محمد';
+        new QRCode(canvas,{text:payload,width:260,height:260,colorDark:'#111111',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.L,typeNumber:20});
+      }catch(err){
+        canvas.innerHTML='<div style="padding:30px;color:#c00;font-size:11px">خطأ في توليد QR</div>';
+        console.error('QR error:',err);
       }
-    };
-    
-    VOICE.rec.onend=function(){
-      VOICE.active=false;
-      if(!VOICE.manualStop&&SW4.running){
-        var allFrozen=true;
-        for(var i=0;i<4;i++){
-          var sid=document.getElementById('sw4-sel-'+i);
-          if(sid&&sid.value&&!SW4.lanes[i].frozen){allFrozen=false;break;}
-        }
-        if(!allFrozen){
-          setTimeout(function(){
-            try{if(VOICE.rec&&!VOICE.manualStop){VOICE.rec.start();}}
-            catch(e){console.warn('Restart fail:',e);}
-          },200);
-        }
-      }
-    };
-    
-    VOICE.rec.start();
-  }catch(err){
-    console.error('Recognition init error:',err);
-    sw4ShowWhistleStatus('⚠️ فشل تشغيل التعرف - أوقف الحارات يدوياً');
+    },150);
+  }catch(e){
+    console.error('openQR error:',e);
+    toast('خطأ','تعذر فتح نافذة QR','er');
+  }
+}
+function exportClassInfoPDF(){
+  var btn=document.getElementById('qr-pdf-btn');
+  var cid=btn?btn.dataset.cid:S.cid;
+  var cls=GC(cid);
+  if(!cls){toast('تنبيه','لا يوجد قسم','wa');return;}
+  var stus=D.students.filter(function(s){return s.classId===cid;});
+  var males=stus.filter(function(s){return s.gender==='male';}).length;
+  var females=stus.length-males;
+  var sch=D.settings.school||'الثانوية';
+  var yr=D.settings.year||'—';
+  // Build student list
+  var stuRows='';
+  stus.forEach(function(s,i){
+    stuRows+='<tr><td>'+(i+1)+'</td><td style="text-align:right">'+s.name+'</td><td>'+(s.gender==='male'?'ذكر':'أنثى')+'</td></tr>';
+  });
+  var html='<div class="page"><div class="watermark">'+sch+'</div>'+
+    '<div style="text-align:center;border-bottom:2px solid #1a6b3a;padding-bottom:8px;margin-bottom:14px">'+
+    '<div style="font-size:14px;font-weight:800;color:#1a6b3a">'+sch+'</div>'+
+    '<div style="font-size:11px;color:#555;margin-top:2px">السنة الدراسية: '+yr+'</div></div>'+
+    '<h1>بطاقة معلومات القسم</h1>'+
+    '<h2>مادة التربية البدنية والرياضية</h2>'+
+    '<div style="background:#f5f5f5;padding:14px;border-radius:8px;margin-bottom:20px">'+
+    '<table style="width:100%;border:none;margin:0">'+
+    '<tr><td style="border:none;padding:6px 8px;font-weight:700;width:35%">القسم</td><td style="border:none;padding:6px 8px">'+cls.name+'</td></tr>'+
+    '<tr><td style="border:none;padding:6px 8px;font-weight:700">المستوى</td><td style="border:none;padding:6px 8px">'+LVL[cls.level]+'</td></tr>'+
+    '<tr><td style="border:none;padding:6px 8px;font-weight:700">عدد التلاميذ</td><td style="border:none;padding:6px 8px">'+stus.length+'</td></tr>'+
+    '<tr><td style="border:none;padding:6px 8px;font-weight:700">ذكور</td><td style="border:none;padding:6px 8px">'+males+'</td></tr>'+
+    '<tr><td style="border:none;padding:6px 8px;font-weight:700">إناث</td><td style="border:none;padding:6px 8px">'+females+'</td></tr>'+
+    '</table></div>'+
+    '<h2 style="text-align:right;margin:18px 0 8px">قائمة التلاميذ</h2>'+
+    '<table><thead><tr><th>الرقم</th><th>الاسم واللقب</th><th>الجنس</th></tr></thead><tbody>'+stuRows+'</tbody></table>'+
+    '<div class="footer">'+
+    '<div class="sig-box"><div>أستاذ التربية البدنية والرياضية</div><div class="sig-line"></div><div style="font-weight:700">دلباز محمد</div></div>'+
+    '<div class="sig-box"><div>مستشار التربية</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
+    '<div class="sig-box"><div>الناظر</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
+    '</div></div>';
+  openGradeSheetPDF(html,'بطاقة معلومات القسم — '+cls.name);
+}
+function downloadQR(){
+  const img=document.querySelector('#qr-canvas img');const cvs=document.querySelector('#qr-canvas canvas');
+  const src=img?img.src:cvs?cvs.toDataURL('image/png'):null;
+  if(!src){toast('تنبيه','لا يوجد QR','wa');return;}
+  const a=document.createElement('a');a.download='QR_SmartSport_'+Date.now()+'.png';a.href=src;a.click();
+}
+function shareClassData(){
+  const btn=document.getElementById('qr-share-btn');const cid=btn?.dataset.cid||S.cid;
+  const cls=GC(cid);if(!cls){toast('تنبيه','لا يوجد قسم','wa');return;}
+  const stus=D.students.filter(s=>s.classId===cid);
+  const blob=new Blob([JSON.stringify({settings:D.settings,scales:D.scales,classes:[cls],students:stus})],{type:'application/json'});
+  const file=new File([blob],'SmartSport_'+cls.name+'_'+D.settings.year+'.json',{type:'application/json'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:'SmartSport — '+cls.name,text:'بيانات قسم '+cls.name}).catch(()=>{});
+  }else{
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);toast('تم','تم تنزيل ملف بيانات القسم','su');
   }
 }
 
-function sw4ProcessVoiceCmd(transcript,detectedAt){
-  var now=performance.now();
-  if(!detectedAt)detectedAt=now;
-  // Check each lane keyword - use substring match (faster, handles interim partials)
-  for(var lane=0;lane<4;lane++){
-    var keys=VOICE.keywords[lane];
-    for(var k=0;k<keys.length;k++){
-      var kw=keys[k];
-      // Substring match - works on interim partial results
-      if(transcript.indexOf(kw)===-1)continue;
-      // Lane checks
-      var sid=document.getElementById('sw4-sel-'+lane);
-      if(!sid||!sid.value)return false;
-      if(SW4.lanes[lane].frozen)return false;
-      // Anti-spam: same lane within 800ms
-      if(VOICE.lastFreeze.lane===lane&&(now-VOICE.lastFreeze.time)<800)return false;
-      VOICE.lastFreeze={lane:lane,time:now};
-      // CAPTURE TIME with latency compensation
-      // detectedAt is when onresult fired - subtract ~250ms for typical SpeechRecognition lag
-      sw4StopLane(lane,detectedAt-VOICE.latencyOffset);
-      sw4ShowWhistleStatus('🔒 حارة '+(lane+1)+' · '+kw);
-      return true;
-    }
-  }
-  return false;
-}
-
-// New function: stop lane with EXPLICIT timestamp (for voice with latency compensation)
-function sw4StopLane(lane,timestamp){
-  var sid=document.getElementById('sw4-sel-'+lane);
-  if(!SW4.running||SW4.lanes[lane].frozen||!sid||!sid.value)return;
-  if(!timestamp)timestamp=performance.now();
-  // Don't allow negative or pre-start time
-  var rawTime=Math.max(0,timestamp-SW4.startT);
-  var time=parseFloat((rawTime/1000).toFixed(2));
-  SW4.lanes[lane].frozen=true;SW4.lanes[lane].time=time;
-  var disp=document.getElementById('sw4-disp-'+lane);if(disp)disp.textContent=time.toFixed(2);
-  var card=document.getElementById('sw4-lane-'+lane);if(card){card.classList.remove('sw4-run');card.classList.add('sw4-frz');}
-  var btn=document.getElementById('sw4-stp-'+lane);if(btn){btn.disabled=true;btn.textContent='✅ '+time.toFixed(2)+' ث';btn.style.borderColor='rgba(78,165,255,.4)';btn.style.color='#4ea5ff';}
-  if(sid.value){
-    var stu=GS(sid.value);var cls=stu?GC(stu.classId):null;
-    if(stu&&cls){var sc=lookup(time,stu.gender,cls.level,'sprint60');var scEl=document.getElementById('sw4-sc-'+lane);if(scEl&&sc!==null){scEl.textContent=fmt(sc)+'/20';scEl.style.color=sCol(sc);}}
-  }
-  // Check if all lanes done
-  var anyActive=false;
-  for(var i=0;i<4;i++){
-    var s2=document.getElementById('sw4-sel-'+i)?.value;
-    if(s2&&!SW4.lanes[i].frozen){anyActive=true;break;}
-  }
-  if(!anyActive){
-    SW4.running=false;cancelAnimationFrame(SW4.raf);
-    var master=document.getElementById('sw4-master');if(master){master.style.color='#4ea5ff';master.style.textShadow='0 0 14px rgba(78,165,255,.3)';}
-    if(VOICE&&VOICE.active)sw4StopVoiceListen();
-    sw4ShowWhistleStatus('✅ كل الحارات مسجلة - اضغط حفظ');
-  }
-  sw4SyncSaveBtn();
-}
-
-function sw4StopVoiceListen(){
-  VOICE.manualStop=true;
-  VOICE.active=false;
-  try{if(VOICE.rec)VOICE.rec.stop();}catch(e){}
-  try{if(VOICE.rec)VOICE.rec.abort();}catch(e){}
-  VOICE.rec=null;
-}
-
+// SW4 — 4-Lane Parallel Sprint Stopwatch Engine
+// Delbaz_EPS · Mai 2026
+// ═══════════════════════════════════════════════════════
 function sw4ToggleWhistle(){
   if(WHISTLE.active){sw4StopWhistleDetection();}
   else{sw4StartWhistleDetection();}
@@ -3223,7 +3374,7 @@ function sw4HideWhistleStatus(){
 
 function closeSW4(){
   SW4.running=false;cancelAnimationFrame(SW4.raf);SW4.raf=null;
-  if(WHISTLE&&WHISTLE.active)sw4StopWhistleDetection();
+  if(WHISTLE&&WHISTLE.active)sw4StopWhistle();
   if(VOICE&&VOICE.active)sw4StopVoiceListen();
   sw4HideWhistleStatus();
   document.getElementById('sw4-modal').style.display='none';
@@ -3317,11 +3468,10 @@ function sw4SelChange(lane){
 function sw4Start(){
   if(SW4.running)return;
   SW4.running=true;
-  // Only set startT if not already set by whistle trigger
-  if(!SW4._whistleStart)SW4.startT=performance.now();
-  SW4._whistleStart=false;
-  // Phase 2: Activate voice command listener
-  setTimeout(function(){sw4StartVoiceListen();},150);
+  if(!SW4._fromWhistle)SW4.startT=performance.now();
+  SW4._fromWhistle=false;
+  // Phase 2: French voice commands
+  setTimeout(function(){sw4StartVoiceListen();},200);
   for(let i=0;i<4;i++){
     const hasStu=document.getElementById('sw4-sel-'+i)?.value;
     const btn=document.getElementById('sw4-stp-'+i);const card=document.getElementById('sw4-lane-'+i);
@@ -3484,10 +3634,9 @@ function openExemptionList(){
   }
   var ov=document.getElementById('ov-exl');
   if(!ov){ov=document.createElement('div');ov.id='ov-exl';document.body.appendChild(ov);}
-  ov.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;justify-content:center;align-items:flex-end;backdrop-filter:blur(10px)';
   ov.onclick=function(e){if(e.target===ov)closeExemptionList();};
-  ov.innerHTML='<div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--p2)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udccb</span><div><div style="font-size:13px;font-weight:900;color:var(--tx)">المعفيون \u2014 '+scopeLabel+'</div><div style="font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px">'+totalCount+' حالة إعفاء</div></div></div><div style="display:flex;gap:6px"><button onclick="printExemptionList()" title="تحميل وطباعة PDF" style="width:34px;height:34px;background:rgba(0,217,126,.12);border:1px solid rgba(0,217,126,.3);border-radius:9px;color:var(--g);font-size:14px;cursor:pointer;font-weight:900">🖨️</button><button onclick="closeExemptionList()" style="width:34px;height:34px;background:var(--rb);border:1px solid rgba(255,89,89,.3);border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">&#x2715;</button></div></div><div style="overflow-y:auto;flex:1;padding:12px 14px;-webkit-overflow-scrolling:touch">'+bodyHTML+'</div></div></div>';
-  ov.style.display='block';
+  ov.innerHTML='<div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--p2)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udccb</span><div><div style="font-size:13px;font-weight:900;color:var(--tx)">المعفيون \u2014 '+scopeLabel+'</div><div style="font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px">'+totalCount+' حالة إعفاء</div></div></div><div style="display:flex;gap:6px"><button onclick="printExemptionList()" title="تحميل وطباعة PDF" style="width:34px;height:34px;background:rgba(0,217,126,.12);border:1px solid rgba(0,217,126,.3);border-radius:9px;color:var(--g);font-size:14px;cursor:pointer;font-weight:900">🖨️</button><button onclick="closeExemptionList()" style="width:34px;height:34px;background:var(--rb);border:1px solid rgba(255,89,89,.3);border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">&#x2715;</button></div></div><div style="overflow-y:auto;flex:1;padding:12px 14px;-webkit-overflow-scrolling:touch">'+bodyHTML+'</div></div></div>';
+  ov.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10000;justify-content:center;align-items:flex-end;backdrop-filter:blur(12px)';
 }
 
 
