@@ -28,7 +28,7 @@
 <style>
 :root{--bg:#070b12;--p1:#0d1220;--p2:#121828;--p3:#19212f;--p4:#1f2a3c;--ln:rgba(255,255,255,.065);--ln2:rgba(255,255,255,.11);--g:#00d97e;--g2:#00b568;--gb:rgba(0,217,126,.13);--gg:rgba(0,217,126,.22);--gold:#f5b932;--gob:rgba(245,185,50,.13);--red:#ff5959;--rb:rgba(255,89,89,.13);--blu:#4f8eff;--blub:rgba(79,142,255,.13);--pnk:#e879f9;--pnkb:rgba(232,121,249,.13);--tx:#ecf0fa;--tx2:#8e9ab2;--tx3:#4f5d74;--ff:'Tajawal',sans-serif;--fn:'Bebas Neue','Tajawal',sans-serif;--r:12px;--rl:20px}
 body.light{--bg:#f0f4f8;--p1:#e2e8f0;--p2:#edf2f7;--p3:#dde4ee;--p4:#c8d3e1;--ln:rgba(0,0,0,.12);--ln2:rgba(0,0,0,.2);--tx:#0d1117;--tx2:#2d3748;--tx3:#4a5568;--g:#007a47;--g2:#006038;--gold:#b07800;--blu:#1a5fd4;--red:#c0392b}
-body,body *{transition:background-color .25s,color .15s,border-color .2s;}
+body.transitioning,body.transitioning *{transition:background-color .3s,color .2s,border-color .25s;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--ff);color:var(--tx)}
 body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
@@ -2722,10 +2722,12 @@ updPill('home');
 if(D.classes.length) S.cid = D.classes[0].id;
 setTimeout(initClsDrag, 0);
 function toggleTheme(){
+  document.body.classList.add('transitioning');
   const isLight=document.body.classList.toggle('light');
   localStorage.setItem('ss_theme',isLight?'light':'dark');
   const tb=document.getElementById('theme-btn');if(tb)tb.textContent=isLight?'🌞':'🌙';
   const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.content=isLight?'#f0f4f8':'#070b12';
+  setTimeout(function(){document.body.classList.remove('transitioning');},400);
 }
 function initTheme(){
   const t=localStorage.getItem('ss_theme');
@@ -2742,79 +2744,8 @@ updateUndoBtn();
 
 // ═══ EMERGENCY DATA RECOVERY ═══
 // If current D is empty but localStorage has older data, recover it
-(function tryRecoverData(){
-  if(D.classes.length > 0) return; // Data is fine
-  
-  // Strategy 1: Check ss_v3_auto_backup
-  try{
-    const bk = localStorage.getItem('ss_v3_auto_backup');
-    if(bk){
-      const parsed = JSON.parse(bk);
-      const data = typeof parsed.data === 'string' ? JSON.parse(parsed.data) : parsed;
-      if(data && data.classes && data.classes.length > 0){
-        D = data; SD();
-        toast('تم الاسترداد','✅ استُعيدت بياناتك من النسخ التلقائية');
+// (function tryRecoverData() disabled - no welcome/restore prompt) - users start fresh
 
-render('home'); return;
-      }
-    }
-  }catch(e){}
-
-  // Strategy 2: Scan ALL localStorage keys for SmartSport data
-  try{
-    for(let i=0; i<localStorage.length; i++){
-      const key = localStorage.key(i);
-      if(!key) continue;
-      try{
-        const val = localStorage.getItem(key);
-        if(!val || val.length < 50) continue;
-        const obj = JSON.parse(val);
-        // Check if it looks like SmartSport data
-        if(obj && obj.classes && Array.isArray(obj.classes) && obj.classes.length > 0 && obj.students){
-          D = obj; SD();
-          toast('تم الاسترداد','✅ بياناتك استُعيدت من النسخة الاحتياطية');
-          render('home'); return;
-        }
-        // Check if it's a wrapped backup
-        if(obj && obj.data){
-          const inner = typeof obj.data==='string' ? JSON.parse(obj.data) : obj.data;
-          if(inner && inner.classes && inner.classes.length > 0){
-            D = inner; SD();
-            toast('تم الاسترداد','✅ بياناتك استُعيدت من النسخة الاحتياطية');
-            render('home'); return;
-          }
-        }
-      }catch(e){}
-    }
-  }catch(e){}
-
-  // Strategy 3: Show recovery modal if still empty
-  setTimeout(()=>{
-    if(D.classes.length > 0) return;
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:24px;direction:rtl';
-    modal.innerHTML = `
-      <div style="background:var(--p1);border:1px solid var(--ln);border-radius:20px;padding:22px;max-width:380px;width:100%;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">🏆</div>
-        <div style="font-size:18px;font-weight:900;color:var(--gold);margin-bottom:8px">مرحباً بك في Smart EPS</div>
-        <div style="font-size:12px;color:var(--tx2);margin-bottom:20px;line-height:1.7">
-          هذه أول مرة تفتح فيها التطبيق.<br>
-          هل لديك ملف نسخة احتياطية (JSON) لاستعادتها؟<br>
-          أم تريد البدء من الصفر؟
-        </div>
-        <button onclick="this.parentElement.parentElement.remove()" 
-          style="width:100%;padding:13px;background:linear-gradient(135deg,#daa520,#ffd700);border:none;border-radius:12px;color:#1a3a1f;font-size:13px;font-weight:900;cursor:pointer;margin-bottom:10px;font-family:var(--ff)">
-          🚀 ابدأ تطبيقاً جديداً
-        </button>
-        <button onclick="document.getElementById('restore-inp').click()" 
-          style="width:100%;padding:11px;background:transparent;border:1px solid var(--ln);border-radius:12px;color:var(--tx2);font-size:12px;cursor:pointer;font-family:var(--ff)">
-          📂 لدي نسخة احتياطية
-        </button>
-        <input id="restore-inp" type="file" accept=".json" style="display:none" onchange="emergencyRestore(this)">
-      </div>`;
-    document.body.appendChild(modal);
-  }, 1200);
-})();
 
 function emergencyRestore(inp){
   const file = inp.files[0]; if(!file) return;
@@ -3553,7 +3484,7 @@ function openExemptionList(){
   }
   var ov=document.getElementById('ov-exl');
   if(!ov){ov=document.createElement('div');ov.id='ov-exl';document.body.appendChild(ov);}
-  ov.innerHTML='<div onclick="closeExemptionList()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;justify-content:center;align-items:flex-end;backdrop-filter:blur(8px)"><div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--p2)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udccb</span><div><div style="font-size:13px;font-weight:900;color:var(--tx)">المعفيون \u2014 '+scopeLabel+'</div><div style="font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px">'+totalCount+' حالة إعفاء</div></div></div><div style="display:flex;gap:6px"><button onclick="printExemptionList()" title="تحميل وطباعة PDF" style="width:34px;height:34px;background:rgba(0,217,126,.12);border:1px solid rgba(0,217,126,.3);border-radius:9px;color:var(--g);font-size:14px;cursor:pointer;font-weight:900">🖨️</button><button onclick="closeExemptionList()" style="width:34px;height:34px;background:var(--rb);border:1px solid rgba(255,89,89,.3);border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">&#x2715;</button></div></div><div style="overflow-y:auto;flex:1;padding:12px 14px;-webkit-overflow-scrolling:touch">'+bodyHTML+'</div></div></div>';
+  ov.innerHTML='<div onclick="closeExemptionList()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;justify-content:center;align-items:flex-end;backdrop-filter:blur(10px)"><div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--p2)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udccb</span><div><div style="font-size:13px;font-weight:900;color:var(--tx)">المعفيون \u2014 '+scopeLabel+'</div><div style="font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px">'+totalCount+' حالة إعفاء</div></div></div><div style="display:flex;gap:6px"><button onclick="printExemptionList()" title="تحميل وطباعة PDF" style="width:34px;height:34px;background:rgba(0,217,126,.12);border:1px solid rgba(0,217,126,.3);border-radius:9px;color:var(--g);font-size:14px;cursor:pointer;font-weight:900">🖨️</button><button onclick="closeExemptionList()" style="width:34px;height:34px;background:var(--rb);border:1px solid rgba(255,89,89,.3);border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">&#x2715;</button></div></div><div style="overflow-y:auto;flex:1;padding:12px 14px;-webkit-overflow-scrolling:touch">'+bodyHTML+'</div></div></div>';
   ov.style.display='block';
 }
 
