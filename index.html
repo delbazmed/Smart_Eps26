@@ -28,7 +28,7 @@
 <style>
 :root{--bg:#070b12;--p1:#0d1220;--p2:#121828;--p3:#19212f;--p4:#1f2a3c;--ln:rgba(255,255,255,.065);--ln2:rgba(255,255,255,.11);--g:#00d97e;--g2:#00b568;--gb:rgba(0,217,126,.13);--gg:rgba(0,217,126,.22);--gold:#f5b932;--gob:rgba(245,185,50,.13);--red:#ff5959;--rb:rgba(255,89,89,.13);--blu:#4f8eff;--blub:rgba(79,142,255,.13);--pnk:#e879f9;--pnkb:rgba(232,121,249,.13);--tx:#ecf0fa;--tx2:#8e9ab2;--tx3:#4f5d74;--ff:'Tajawal',sans-serif;--fn:'Bebas Neue','Tajawal',sans-serif;--r:12px;--rl:20px}
 body.light{--bg:#f0f4f8;--p1:#e2e8f0;--p2:#edf2f7;--p3:#dde4ee;--p4:#c8d3e1;--ln:rgba(0,0,0,.12);--ln2:rgba(0,0,0,.2);--tx:#0d1117;--tx2:#2d3748;--tx3:#4a5568;--g:#007a47;--g2:#006038;--gold:#b07800;--blu:#1a5fd4;--red:#c0392b}
-body.transitioning,body.transitioning *{transition:background-color .3s,color .2s,border-color .25s;}
+body,body *{transition:background-color .3s,color .2s,border-color .25s,fill .2s;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--ff);color:var(--tx)}
 body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
@@ -2722,12 +2722,12 @@ updPill('home');
 if(D.classes.length) S.cid = D.classes[0].id;
 setTimeout(initClsDrag, 0);
 function toggleTheme(){
-  document.body.classList.add('transitioning');
   const isLight=document.body.classList.toggle('light');
   localStorage.setItem('ss_theme',isLight?'light':'dark');
-  const tb=document.getElementById('theme-btn');if(tb)tb.textContent=isLight?'🌞':'🌙';
-  const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.content=isLight?'#f0f4f8':'#070b12';
-  setTimeout(function(){document.body.classList.remove('transitioning');},400);
+  const tb=document.getElementById('theme-btn');
+  if(tb){tb.textContent=isLight?'🌞':'🌙';}
+  const mc=document.querySelector('meta[name="theme-color"]');
+  if(mc)mc.content=isLight?'#f0f4f8':'#070b12';
 }
 function initTheme(){
   const t=localStorage.getItem('ss_theme');
@@ -3406,7 +3406,7 @@ function sw4ResetState(){
   }
 }
 
-function closeExemptionList(){var o=document.getElementById('ov-exl');if(o){o.style.display='none';o.innerHTML='';}}
+function closeExemptionList(){var o=document.getElementById('ov-exl');if(o){o.style.display='none';}}
 function printExemptionList(){
   var sch=D.settings.school||'الثانوية';
   var yr=D.settings.year||'\u2014';
@@ -3484,7 +3484,9 @@ function openExemptionList(){
   }
   var ov=document.getElementById('ov-exl');
   if(!ov){ov=document.createElement('div');ov.id='ov-exl';document.body.appendChild(ov);}
-  ov.innerHTML='<div onclick="closeExemptionList()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;justify-content:center;align-items:flex-end;backdrop-filter:blur(10px)"><div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--p2)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udccb</span><div><div style="font-size:13px;font-weight:900;color:var(--tx)">المعفيون \u2014 '+scopeLabel+'</div><div style="font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px">'+totalCount+' حالة إعفاء</div></div></div><div style="display:flex;gap:6px"><button onclick="printExemptionList()" title="تحميل وطباعة PDF" style="width:34px;height:34px;background:rgba(0,217,126,.12);border:1px solid rgba(0,217,126,.3);border-radius:9px;color:var(--g);font-size:14px;cursor:pointer;font-weight:900">🖨️</button><button onclick="closeExemptionList()" style="width:34px;height:34px;background:var(--rb);border:1px solid rgba(255,89,89,.3);border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">&#x2715;</button></div></div><div style="overflow-y:auto;flex:1;padding:12px 14px;-webkit-overflow-scrolling:touch">'+bodyHTML+'</div></div></div>';
+  ov.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;justify-content:center;align-items:flex-end;backdrop-filter:blur(10px)';
+  ov.onclick=function(e){if(e.target===ov)closeExemptionList();};
+  ov.innerHTML='<div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div onclick="event.stopPropagation()" style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden"><div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--p2)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">\ud83d\udccb</span><div><div style="font-size:13px;font-weight:900;color:var(--tx)">المعفيون \u2014 '+scopeLabel+'</div><div style="font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px">'+totalCount+' حالة إعفاء</div></div></div><div style="display:flex;gap:6px"><button onclick="printExemptionList()" title="تحميل وطباعة PDF" style="width:34px;height:34px;background:rgba(0,217,126,.12);border:1px solid rgba(0,217,126,.3);border-radius:9px;color:var(--g);font-size:14px;cursor:pointer;font-weight:900">🖨️</button><button onclick="closeExemptionList()" style="width:34px;height:34px;background:var(--rb);border:1px solid rgba(255,89,89,.3);border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">&#x2715;</button></div></div><div style="overflow-y:auto;flex:1;padding:12px 14px;-webkit-overflow-scrolling:touch">'+bodyHTML+'</div></div></div>';
   ov.style.display='block';
 }
 
