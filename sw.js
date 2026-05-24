@@ -1,5 +1,5 @@
 // Smart EPS Service Worker - Network First Strategy
-const CACHE = 'smart-eps-v6';
+const CACHE = 'smart-eps-v7';
 
 self.addEventListener('install', e => {
   self.skipWaiting(); // activate immediately

@@ -872,7 +872,7 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
 </div>
 
 <!-- QR CODE OVERLAY -->
-<div class="ov" id="ov-qr" style="display:none">
+<div class="ov" id="ov-qr" class="ov">
   <div class="ov-box" style="max-width:340px">
     <div class="ov-hd"><span>🔳 QR Code — القسم</span><button onclick="closeOv('ov-qr')" class="ov-cl">✕</button></div>
     <div style="text-align:center;padding:20px 16px">
@@ -1022,7 +1022,7 @@ let D=LD();
 function GC(id){return D.classes.find(c=>c.id===id);}
 function GS(id){return D.students.find(s=>s.id===id);}
 function GSC(cid){return D.students.filter(s=>s.classId===cid);}
-function initStu(s){if(!s.terms)s.terms={};['t1','t2','t3'].forEach(k=>{if(!s.terms[k])s.terms[k]={exempted:false,actF:null,actJ:null,mc:{ses:[0,0,0,0,0,0,0],discipline:0,participation:0,creativity:0,mcEntered:false},fard:{tr:[],jg:null},test:{tr:[],jg:null}};else if(s.terms[k].mc&&s.terms[k].mc.mcEntered===undefined)s.terms[k].mc.mcEntered=false;});}
+function initStu(s){if(!s.terms)s.terms={};['t1','t2','t3'].forEach(k=>{if(!s.terms[k])s.terms[k]={exempted:false,actF:null,actJ:null,mc:{ses:[2,2,2,2,2,2,2],discipline:2,participation:0,creativity:0,mcEntered:false},fard:{tr:[],jg:null},test:{tr:[],jg:null}};else{var _mc=s.terms[k].mc;if(_mc.mcEntered===undefined)_mc.mcEntered=false;if(_mc.discipline===undefined||_mc.discipline===null)_mc.discipline=2;if(_mc.ses&&_mc.ses.length&&_mc.ses.every(function(v){return v===0;}))_mc.ses=[2,2,2,2,2,2,2];}});}
 function uid(){return '_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);}
 function calcMCRaw(t){const behSum=(parseFloat(t.mc.discipline)||0)+(parseFloat(t.mc.participation)||0)+(parseFloat(t.mc.creativity)||0);return Math.min(20,t.mc.ses.reduce((a,b)=>a+b,0)+behSum);}
 function calcMC(t){if(!t.mc.mcEntered)return null;return calcMCRaw(t);}
@@ -2775,6 +2775,7 @@ function openQR(clsId){
     if(pb){pb.dataset.cid=cid;}
     openOv('ov-qr');
     setTimeout(function(){
+      var qc=document.getElementById("qr-canvas");if(qc)qc.innerHTML="";
       if(typeof QRCode==='undefined'){
         canvas.innerHTML='<div style="padding:30px;color:#c00;font-size:11px">مكتبة QR غير محملة</div>';
         return;
@@ -3688,16 +3689,30 @@ function stuCard(sid,color){
   var tk=S.term||'t1';
   var mc=stu.terms[tk].mc;
   if(color==='g'){
-    mc.participation=Math.min(2,parseFloat(mc.participation||0)+0.5);
-    toast('🟢 بطاقة خضراء',stu.name+' — مشاركة +0.5','su',1500);
+    // Green: +0.5 participation, max=2, starts at 0
+    var cur=parseFloat(mc.participation)||0;
+    if(cur>=2){toast('🟢',stu.name+' — المشاركة وصلت الحد الأقصى 2','wa',1500);return;}
+    mc.participation=Math.min(2,cur+0.5);
+    toast('🟢 بطاقة خضراء',stu.name+' — مشاركة: '+mc.participation+'/2','su',1500);
   }else if(color==='y'){
-    mc.discipline=Math.max(0,parseFloat(mc.discipline||0)-0.5);
-    toast('🟡 بطاقة صفراء',stu.name+' — انضباط −0.5','wa',1500);
+    // Yellow: -0.5 discipline, default=2, min=0
+    if(!mc._discInit){mc.discipline=parseFloat(mc.discipline)||0;if(!mc.discipline&&mc.discipline!==0)mc.discipline=2;}
+    var curD=parseFloat(mc.discipline)||0;
+    if(curD<=0){toast('🟡',stu.name+' — الانضباط وصل الصفر','wa',1500);return;}
+    mc.discipline=Math.max(0,curD-0.5);
+    toast('🟡 بطاقة صفراء',stu.name+' — انضباط: '+mc.discipline+'/2','wa',1500);
   }else if(color==='r'){
-    mc.participation=0;mc.discipline=0;
-    toast('🔴 بطاقة حمراء',stu.name+' — عزل الحصة','er',2500);
+    // Red: mark current active session as Absent (0), discipline -2
+    var sesArr=mc.ses;
+    // Find first non-absent session index (value != 0)
+    var sesIdx=sesArr.findIndex(function(v){return v!==0;});
+    if(sesIdx>=0)sesArr[sesIdx]=0; // mark as absent (A)
+    mc.discipline=Math.max(0,(parseFloat(mc.discipline)||2)-2);
+    toast('🔴 غياب + عقوبة',stu.name+' — تسجيل غائب + انضباط −2','er',2500);
   }
   snapshot('بطاقة سلوك');SD();
+  // Refresh MC screen if open
+  if(S.sid===sid&&document.getElementById('mc-sub'))rMC();
 }
 
 // ─── Captaincy Role Allocator ──────────────────────────────
@@ -3775,6 +3790,66 @@ function openCaptainSheet(sid){
     toast('🔒','حارة '+(lane+1)+'  مفتاح الصوت','su',1200);
   },{passive:false});
 })();
+
+
+function openExemptionList(){
+  var sch=D.settings.school||'الثانوية';
+  var yr=D.settings.year||'—';
+  var rows=[];
+  D.classes.forEach(function(cls){
+    D.students.filter(function(s){return s.classId===cls.id;}).forEach(function(s){
+      initStu(s);
+      var exT1=s.terms.t1.exempted,exT2=s.terms.t2.exempted,exT3=s.terms.t3.exempted;
+      if(!exT1&&!exT2&&!exT3)return;
+      var allEx=exT1&&exT2&&exT3;
+      var note=allEx?'معفى':'معفى جزئياً';
+      var terms=[];
+      if(exT1)terms.push('ف1');if(exT2)terms.push('ف2');if(exT3)terms.push('ف3');
+      rows.push({
+        name:s.name,gender:s.gender==='male'?'ذكر':'أنثى',
+        cls:cls.name,level:LVL[cls.level],
+        note:note,terms:terms,allEx:allEx
+      });
+    });
+  });
+
+  var tbody='';
+  rows.forEach(function(r,i){
+    var clr=r.allEx?'#c0392b':'#d4900a';
+    tbody+='<tr><td>'+(i+1)+'</td>'+
+      '<td style="text-align:right;font-weight:700">'+r.name+'</td>'+
+      '<td>'+(r.gender==='ذكر'?'👦':'👧')+' '+r.gender+'</td>'+
+      '<td>'+r.cls+'<br><small style="color:#777">'+r.level+'</small></td>'+
+      '<td><span style="color:#555;font-size:10px">'+r.terms.join(', ')+'</span></td>'+
+      '<td style="font-weight:800;color:'+clr+'">'+r.note+'</td></tr>';
+  });
+
+  var html='<div class="page"><div class="watermark">'+sch+'</div>'+
+    '<div style="text-align:center;border-bottom:2px solid #c0392b;padding-bottom:8px;margin-bottom:14px">'+
+    '<div style="font-size:14px;font-weight:800;color:#c0392b">'+sch+'</div>'+
+    '<div style="font-size:11px;color:#555;margin-top:2px">السنة الدراسية: '+yr+'</div></div>'+
+    '<h1>قائمة التلاميذ المعفيين</h1>'+
+    '<h2>مادة التربية البدنية والرياضية</h2>'+
+    '<div class="info-row" style="margin-bottom:14px"><span>العدد: <strong>'+rows.length+'</strong></span></div>'+
+    '<table><thead><tr>'+
+    '<th style="background:#c0392b">رقم</th>'+
+    '<th style="background:#c0392b">الاسم واللقب</th>'+
+    '<th style="background:#c0392b">الجنس</th>'+
+    '<th style="background:#c0392b">القسم</th>'+
+    '<th style="background:#c0392b">الفصل(ات)</th>'+
+    '<th style="background:#c0392b">الملاحظة</th>'+
+    '</tr></thead><tbody>'+tbody+'</tbody></table>'+
+    '<div class="footer">'+
+    '<div class="sig-box"><div>أستاذ التربية البدنية والرياضية</div><div class="sig-line"></div><div style="font-weight:700">دلباز محمد</div></div>'+
+    '<div class="sig-box"><div>مستشار التربية</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
+    '<div class="sig-box"><div>الناظر</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
+    '</div></div>';
+
+  if(!rows.length){
+    toast('معلومة','لا يوجد معفيون في كل الأقسام','su',2000);return;
+  }
+  openGradeSheetPDF(html,'قائمة المعفيين — '+sch);
+}
 
 render('home');
 
