@@ -407,6 +407,9 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
 .role-item .ri-icon{font-size:20px;width:28px;text-align:center}
 .role-item .ri-label{font-size:13px;font-weight:800;color:var(--tx)}
 .role-item .ri-sub{font-size:10px;color:var(--tx3);font-weight:600;margin-top:1px}
+
+.sc-act-btn:active{transform:scale(.94);}
+.sc-act-btn.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--g);}
 </style>
 </head>
 <body>
@@ -715,20 +718,9 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
     <!-- ═══════════ سلم التنقيط ═══════════ -->
     <div class="sdsec">
       <div class="ey" style="margin-bottom:10px">⚖️ تعديل سلم التنقيط</div>
-      <select class="sdrop" id="sc-sel" onchange="onScSel()">
-        <option value="">— اختر نشاطاً —</option>
-        <optgroup label="الأنشطة الفردية">
-          <option value="sprint60">🏃 جري سريع 60م</option>
-          <option value="longJump">🦘 الوثب الطويل</option>
-          <option value="shotPut">⚫ دفع الجلة</option>
-          <option value="midDist">🏅 نصف الطويل</option>
-          <option value="tripleJump">🔀 الوثب الثلاثي</option>
-          <option value="relay">🔄 التتابع</option>
-        </optgroup>
-        <optgroup label="الأنشطة الجماعية">
-          <option value="collective">🏐 الألعاب الجماعية</option>
-        </optgroup>
-      </select>
+      <div id="sc-sel" style="display:none"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">
+        <div style="color:var(--tx3);font-size:10px;font-weight:800;letter-spacing:.5px;grid-column:1/-1;padding:2px 0">🏃 الأنشطة الفردية</div><button onclick="onScSelCard('sprint60',this)" data-act="sprint60" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#00c851,#00d97e);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🏃</span><span>جري 60م</span></button><button onclick="onScSelCard('longJump',this)" data-act="longJump" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#4ea5ff,#2563eb);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🦘</span><span>وثب طويل</span></button><button onclick="onScSelCard('shotPut',this)" data-act="shotPut" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#888,#555);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">⚫</span><span>دفع جلة</span></button><button onclick="onScSelCard('midDist',this)" data-act="midDist" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#f39c12,#e67e22);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🏃</span><span>جري متوسط</span></button><button onclick="onScSelCard('tripleJump',this)" data-act="tripleJump" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🦘</span><span>وثب ثلاثي</span></button><button onclick="onScSelCard('relay',this)" data-act="relay" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#ec4899,#db2777);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🤝</span><span>تتابع</span></button><div style="color:var(--tx3);font-size:10px;font-weight:800;letter-spacing:.5px;grid-column:1/-1;padding:6px 0 2px">🏐 الأنشطة الجماعية</div><button onclick="onScSelCard('volleyball',this)" data-act="volleyball" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🏐</span><span>كرة طائرة</span></button><button onclick="onScSelCard('basketball',this)" data-act="basketball" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#f97316,#ea580c);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🏀</span><span>كرة سلة</span></button><button onclick="onScSelCard('handball',this)" data-act="handball" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">🤾</span><span>كرة يد</span></button><button onclick="onScSelCard('football',this)" data-act="football" class="sc-act-btn" style="padding:14px 10px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:manipulation;transition:transform .12s,box-shadow .12s"><span style="font-size:22px">⚽</span><span>كرة قدم</span></button></div>
     </div>
     <div id="sc-ind" style="display:none">
       <div class="sced">
@@ -880,10 +872,6 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
   </div>
 </div>
 
-<!-- QR CODE OVERLAY -->
-<div class="ov" id="ov-qr" class="ov">
-  <div class="ov-box" style="max-width:340px">
-    <div class="ov-hd"><span>🔳 QR Code — القسم</span><button onclick="closeOv('ov-qr')" class="ov-cl">✕</button></div>
     <div style="text-align:center;padding:20px 16px">
       <div id="qr-canvas" style="display:inline-block;margin:0 auto 14px;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.3)"></div>
       <div id="qr-info" style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:4px"></div>
@@ -1777,12 +1765,85 @@ function clearGrade(){const s=GS(S.sid);const t=s.terms[S.term];t[S.etype].jg=nu
 
 // ACTS SCREEN
 function rActs(){
-  const acts=D.settings.acts;
-  const fO=Object.entries(AF).map(([k,a])=>'<option value="'+k+'">'+a.ic+' '+a.n+'</option>').join('');
-  const jO=Object.entries(AJ).map(([k,a])=>'<option value="'+k+'">'+a.ic+' '+a.n+'</option>').join('');
-  document.getElementById('acts-body-inline').innerHTML=['t1','t2','t3'].map(tk=>'<div class="ast" style="margin-bottom:12px"><div class="astt">'+TLB[tk]+'</div><div class="asr"><select class="ass" id="asli-f-'+tk+'"><option value="">— نشاط فردي —</option>'+fO+'</select><select class="ass" id="asli-j-'+tk+'"><option value="">— نشاط جماعي —</option>'+jO+'</select></div></div>').join('');
-  ['t1','t2','t3'].forEach(tk=>{const f=document.getElementById('asli-f-'+tk);const j=document.getElementById('asli-j-'+tk);if(f&&acts[tk].f)f.value=acts[tk].f;if(j&&acts[tk].j)j.value=acts[tk].j;});
+  var acts=D.settings.acts;
+  var indActs=Object.entries(AF);
+  var teamActs=Object.entries(AJ);
+  
+  function makeCards(list,prefix,tk,current){
+    var gradients={
+      sprint60:'linear-gradient(135deg,#00c851,#00d97e)',
+      longJump:'linear-gradient(135deg,#4ea5ff,#2563eb)',
+      shotPut:'linear-gradient(135deg,#888,#555)',
+      midDist:'linear-gradient(135deg,#f39c12,#e67e22)',
+      tripleJump:'linear-gradient(135deg,#8b5cf6,#6d28d9)',
+      relay:'linear-gradient(135deg,#ec4899,#db2777)',
+      volleyball:'linear-gradient(135deg,#f59e0b,#d97706)',
+      basketball:'linear-gradient(135deg,#f97316,#ea580c)',
+      handball:'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+      football:'linear-gradient(135deg,#10b981,#059669)'
+    };
+    return list.map(function(entry){
+      var k=entry[0],a=entry[1];
+      var on=(current===k);
+      var gr=gradients[k]||'linear-gradient(135deg,#555,#333)';
+      return '<button onclick="selAct(\''+tk+'\',\''+prefix+'\',\''+k+'\',this)" '+
+        'data-tk="'+tk+'" data-type="'+prefix+'" data-act="'+k+'" '+
+        'style="padding:12px 6px;background:'+(on?gr:'var(--p3)')+';border:'+(on?'2px solid rgba(255,255,255,.4)':'1.5px solid var(--ln)')+';border-radius:12px;color:'+(on?'#fff':'var(--tx3)')+';font-weight:800;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;touch-action:manipulation;transition:all .15s;box-shadow:'+(on?'0 4px 14px rgba(0,0,0,.3)':'none')+'">'+
+        '<span style="font-size:20px">'+a.ic+'</span><span style="text-align:center;line-height:1.3">'+a.n+'</span></button>';
+    }).join('');
+  }
+
+  var html=['t1','t2','t3'].map(function(tk){
+    var termColors={t1:'var(--blu)',t2:'var(--gold)',t3:'var(--red)'};
+    return '<div style="background:var(--p2);border:1px solid var(--ln);border-radius:16px;padding:14px;margin-bottom:12px">'+
+      '<div style="font-size:13px;font-weight:900;color:'+termColors[tk]+';margin-bottom:10px;display:flex;align-items:center;gap:6px">'+
+      '<span style="width:8px;height:8px;border-radius:50%;background:'+termColors[tk]+';display:inline-block"></span>'+TLB[tk]+'</div>'+
+      '<div style="font-size:10px;color:var(--g);font-weight:800;margin-bottom:6px;letter-spacing:.5px">🏃 الفردي</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px" id="acts-ind-'+tk+'">'+
+      makeCards(indActs,'f',tk,acts[tk].f)+
+      '</div>'+
+      '<div style="font-size:10px;color:var(--blu);font-weight:800;margin-bottom:6px;letter-spacing:.5px">🏐 الجماعي</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px" id="acts-team-'+tk+'">'+
+      makeCards(teamActs,'j',tk,acts[tk].j)+
+      '</div></div>';
+  }).join('');
+  document.getElementById('acts-body-inline').innerHTML=html;
 }
+
+function selAct(tk,type,val,btn){
+  // Update data
+  D.settings.acts[tk][type]=val;
+  // Update card visuals for this group
+  var gradients={
+    sprint60:'linear-gradient(135deg,#00c851,#00d97e)',
+    longJump:'linear-gradient(135deg,#4ea5ff,#2563eb)',
+    shotPut:'linear-gradient(135deg,#888,#555)',
+    midDist:'linear-gradient(135deg,#f39c12,#e67e22)',
+    tripleJump:'linear-gradient(135deg,#8b5cf6,#6d28d9)',
+    relay:'linear-gradient(135deg,#ec4899,#db2777)',
+    volleyball:'linear-gradient(135deg,#f59e0b,#d97706)',
+    basketball:'linear-gradient(135deg,#f97316,#ea580c)',
+    handball:'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+    football:'linear-gradient(135deg,#10b981,#059669)'
+  };
+  var container=btn.parentElement;
+  container.querySelectorAll('button').forEach(function(b){
+    var k=b.dataset.act;
+    var isOn=(b===btn);
+    var gr=gradients[k]||'linear-gradient(135deg,#555,#333)';
+    b.style.background=isOn?gr:'var(--p3)';
+    b.style.color=isOn?'#fff':'var(--tx3)';
+    b.style.border=isOn?'2px solid rgba(255,255,255,.4)':'1.5px solid var(--ln)';
+    b.style.boxShadow=isOn?'0 4px 14px rgba(0,0,0,.3)':'none';
+  });
+  toast('✅',TLB[tk]+' — تم اختيار '+(val),'su',1000);
+}
+
+function saveActSelInline(){
+  snapshot('أنشطة');SD();
+  toast('✅ تم الحفظ','الأنشطة محفوظة لكل الأقسام','su',2000);
+}
+
 function saveActSelInline(){
   ['t1','t2','t3'].forEach(tk=>{const f=document.getElementById('asli-f-'+tk)?.value||null;const j=document.getElementById('asli-j-'+tk)?.value||null;D.settings.acts[tk]={f,j};});
   SD();toast('تم الحفظ','تم حفظ أنشطة الفصول الثلاثة');
@@ -2563,7 +2624,7 @@ var WHISTLE={
   active:false,rafId:null,
   peakStartTime:null,
   SUSTAIN_MS:80,
-  THRESHOLD:40,   // simple amplitude threshold (0-255)
+  THRESHOLD:30,   // simple amplitude threshold (0-255)
   minBin:0,maxBin:0,
   _f:0
 };
@@ -2593,8 +2654,10 @@ function sw4ToggleWhistle(){
       WHISTLE.stream=stream;
       var AC=window.AudioContext||window.webkitAudioContext;
       WHISTLE.ctx=new AC();
-      // Resume AudioContext (required on mobile after user gesture)
-      if(WHISTLE.ctx.state==='suspended')WHISTLE.ctx.resume();
+      // Resume AudioContext - critical for mobile Chrome
+      WHISTLE.ctx.resume().then(function(){
+        console.log('AudioContext state:',WHISTLE.ctx.state);
+      }).catch(function(e){console.warn('Resume failed:',e);});
       WHISTLE.source=WHISTLE.ctx.createMediaStreamSource(stream);
 
       // Simple analyser - no bandpass filter (more reliable on mobile)
@@ -2614,7 +2677,7 @@ function sw4ToggleWhistle(){
       WHISTLE._f=0;
 
       if(btn){btn.disabled=false;btn.innerHTML='🎙️ ينصت للصافرة...';btn.style.background='linear-gradient(135deg,#e67e22,#d35400)';}
-      sw4ShowWhistleStatus('🎙️ جاهز — أنفخ في الصافرة بقوة');
+      sw4ShowWhistleStatus('🎙️ جاهز — العتبة: '+WHISTLE.THRESHOLD+' — أنفخ في الصافرة');
       WHISTLE.rafId=requestAnimationFrame(sw4WhistleLoop);
     }catch(err){
       console.error('Whistle setup:',err);
@@ -2841,63 +2904,9 @@ function openQR(clsId){
     toast('خطأ','تعذر فتح نافذة QR','er');
   }
 }
-function exportClassInfoPDF(){
-  var btn=document.getElementById('qr-pdf-btn');
-  var cid=btn?btn.dataset.cid:S.cid;
-  var cls=GC(cid);
-  if(!cls){toast('تنبيه','لا يوجد قسم','wa');return;}
-  var stus=D.students.filter(function(s){return s.classId===cid;});
-  var males=stus.filter(function(s){return s.gender==='male';}).length;
-  var females=stus.length-males;
-  var sch=D.settings.school||'الثانوية';
-  var yr=D.settings.year||'—';
-  // Build student list
-  var stuRows='';
-  stus.forEach(function(s,i){
-    stuRows+='<tr><td>'+(i+1)+'</td><td style="text-align:right">'+s.name+'</td><td>'+(s.gender==='male'?'ذكر':'أنثى')+'</td></tr>';
-  });
-  var html='<div class="page"><div class="watermark">'+sch+'</div>'+
-    '<div style="text-align:center;border-bottom:2px solid #1a6b3a;padding-bottom:8px;margin-bottom:14px">'+
-    '<div style="font-size:14px;font-weight:800;color:#1a6b3a">'+sch+'</div>'+
-    '<div style="font-size:11px;color:#555;margin-top:2px">السنة الدراسية: '+yr+'</div></div>'+
-    '<h1>بطاقة معلومات القسم</h1>'+
-    '<h2>مادة التربية البدنية والرياضية</h2>'+
-    '<div style="background:#f5f5f5;padding:14px;border-radius:8px;margin-bottom:20px">'+
-    '<table style="width:100%;border:none;margin:0">'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700;width:35%">القسم</td><td style="border:none;padding:6px 8px">'+cls.name+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">المستوى</td><td style="border:none;padding:6px 8px">'+LVL[cls.level]+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">عدد التلاميذ</td><td style="border:none;padding:6px 8px">'+stus.length+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">ذكور</td><td style="border:none;padding:6px 8px">'+males+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">إناث</td><td style="border:none;padding:6px 8px">'+females+'</td></tr>'+
-    '</table></div>'+
-    '<h2 style="text-align:right;margin:18px 0 8px">قائمة التلاميذ</h2>'+
-    '<table><thead><tr><th>الرقم</th><th>الاسم واللقب</th><th>الجنس</th></tr></thead><tbody>'+stuRows+'</tbody></table>'+
-    '<div class="footer">'+
-    '<div class="sig-box"><div>أستاذ التربية البدنية والرياضية</div><div class="sig-line"></div><div style="font-weight:700">دلباز محمد</div></div>'+
-    '<div class="sig-box"><div>مستشار التربية</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
-    '<div class="sig-box"><div>الناظر</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
-    '</div></div>';
-  openGradeSheetPDF(html,'بطاقة معلومات القسم — '+cls.name);
-}
-function downloadQR(){
-  const img=document.querySelector('#qr-canvas img');const cvs=document.querySelector('#qr-canvas canvas');
-  const src=img?img.src:cvs?cvs.toDataURL('image/png'):null;
-  if(!src){toast('تنبيه','لا يوجد QR','wa');return;}
-  const a=document.createElement('a');a.download='QR_SmartSport_'+Date.now()+'.png';a.href=src;a.click();
-}
-function shareClassData(){
-  const btn=document.getElementById('qr-share-btn');const cid=btn?.dataset.cid||S.cid;
-  const cls=GC(cid);if(!cls){toast('تنبيه','لا يوجد قسم','wa');return;}
-  const stus=D.students.filter(s=>s.classId===cid);
-  const blob=new Blob([JSON.stringify({settings:D.settings,scales:D.scales,classes:[cls],students:stus})],{type:'application/json'});
-  const file=new File([blob],'SmartSport_'+cls.name+'_'+D.settings.year+'.json',{type:'application/json'});
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'SmartSport — '+cls.name,text:'بيانات قسم '+cls.name}).catch(()=>{});
-  }else{
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);toast('تم','تم تنزيل ملف بيانات القسم','su');
-  }
-}
+
+
+
 
 // SW4 — 4-Lane Parallel Sprint Stopwatch Engine
 // Delbaz_EPS · Mai 2026
@@ -2963,63 +2972,9 @@ function openQR(clsId){
     toast('خطأ','تعذر فتح نافذة QR','er');
   }
 }
-function exportClassInfoPDF(){
-  var btn=document.getElementById('qr-pdf-btn');
-  var cid=btn?btn.dataset.cid:S.cid;
-  var cls=GC(cid);
-  if(!cls){toast('تنبيه','لا يوجد قسم','wa');return;}
-  var stus=D.students.filter(function(s){return s.classId===cid;});
-  var males=stus.filter(function(s){return s.gender==='male';}).length;
-  var females=stus.length-males;
-  var sch=D.settings.school||'الثانوية';
-  var yr=D.settings.year||'—';
-  // Build student list
-  var stuRows='';
-  stus.forEach(function(s,i){
-    stuRows+='<tr><td>'+(i+1)+'</td><td style="text-align:right">'+s.name+'</td><td>'+(s.gender==='male'?'ذكر':'أنثى')+'</td></tr>';
-  });
-  var html='<div class="page"><div class="watermark">'+sch+'</div>'+
-    '<div style="text-align:center;border-bottom:2px solid #1a6b3a;padding-bottom:8px;margin-bottom:14px">'+
-    '<div style="font-size:14px;font-weight:800;color:#1a6b3a">'+sch+'</div>'+
-    '<div style="font-size:11px;color:#555;margin-top:2px">السنة الدراسية: '+yr+'</div></div>'+
-    '<h1>بطاقة معلومات القسم</h1>'+
-    '<h2>مادة التربية البدنية والرياضية</h2>'+
-    '<div style="background:#f5f5f5;padding:14px;border-radius:8px;margin-bottom:20px">'+
-    '<table style="width:100%;border:none;margin:0">'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700;width:35%">القسم</td><td style="border:none;padding:6px 8px">'+cls.name+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">المستوى</td><td style="border:none;padding:6px 8px">'+LVL[cls.level]+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">عدد التلاميذ</td><td style="border:none;padding:6px 8px">'+stus.length+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">ذكور</td><td style="border:none;padding:6px 8px">'+males+'</td></tr>'+
-    '<tr><td style="border:none;padding:6px 8px;font-weight:700">إناث</td><td style="border:none;padding:6px 8px">'+females+'</td></tr>'+
-    '</table></div>'+
-    '<h2 style="text-align:right;margin:18px 0 8px">قائمة التلاميذ</h2>'+
-    '<table><thead><tr><th>الرقم</th><th>الاسم واللقب</th><th>الجنس</th></tr></thead><tbody>'+stuRows+'</tbody></table>'+
-    '<div class="footer">'+
-    '<div class="sig-box"><div>أستاذ التربية البدنية والرياضية</div><div class="sig-line"></div><div style="font-weight:700">دلباز محمد</div></div>'+
-    '<div class="sig-box"><div>مستشار التربية</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
-    '<div class="sig-box"><div>الناظر</div><div class="sig-line"></div><div style="color:#555">التوقيع والختم</div></div>'+
-    '</div></div>';
-  openGradeSheetPDF(html,'بطاقة معلومات القسم — '+cls.name);
-}
-function downloadQR(){
-  const img=document.querySelector('#qr-canvas img');const cvs=document.querySelector('#qr-canvas canvas');
-  const src=img?img.src:cvs?cvs.toDataURL('image/png'):null;
-  if(!src){toast('تنبيه','لا يوجد QR','wa');return;}
-  const a=document.createElement('a');a.download='QR_SmartSport_'+Date.now()+'.png';a.href=src;a.click();
-}
-function shareClassData(){
-  const btn=document.getElementById('qr-share-btn');const cid=btn?.dataset.cid||S.cid;
-  const cls=GC(cid);if(!cls){toast('تنبيه','لا يوجد قسم','wa');return;}
-  const stus=D.students.filter(s=>s.classId===cid);
-  const blob=new Blob([JSON.stringify({settings:D.settings,scales:D.scales,classes:[cls],students:stus})],{type:'application/json'});
-  const file=new File([blob],'SmartSport_'+cls.name+'_'+D.settings.year+'.json',{type:'application/json'});
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'SmartSport — '+cls.name,text:'بيانات قسم '+cls.name}).catch(()=>{});
-  }else{
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);toast('تم','تم تنزيل ملف بيانات القسم','su');
-  }
-}
+
+
+
 
 // SW4 — 4-Lane Parallel Sprint Stopwatch Engine
 // Delbaz_EPS · Mai 2026
@@ -3788,62 +3743,47 @@ function openCaptainSheet(sid,role){
   ov.id='captain-sheet';
   ov.style.cssText='position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:flex-end;backdrop-filter:blur(8px)';
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
+
+  var isCaptain=(role==='captain');
+  var icon=isCaptain?'👑':'🎒';
+  var color=isCaptain?'var(--gold)':'#f39c12';
+  var bgColor=isCaptain?'rgba(218,165,32,.08)':'rgba(243,156,18,.08)';
+  var title=isCaptain?'بطاقة مهام القائد':'بطاقة مهام مسؤول الوسائل';
+
+  var tasks=isCaptain?[
+    {icon:'🏃',color:'var(--g)',title:'قيادة الإحماء',desc:'يقود '+stu.name+' الإحماء الديناميكي 7 دقائق قبل بداية الحصة ويوجّه الزملاء'},
+    {icon:'⏱️',color:'var(--blu)',title:'إدارة الوقت',desc:'مسؤول عن توقيت المحطات وإبلاغ الأستاذ عند انتهاء كل جولة'},
+    {icon:'📋',color:'var(--gold)',title:'تسجيل الأداء',desc:'يسجل نتائج زملائه في المحطات الفرعية ويقدم تقرير موجز للأستاذ'},
+    {icon:'🤝',color:'var(--pnk)',title:'الوساطة والنظام',desc:'يتدخل كوسيط أولي في النزاعات البسيطة قبل إحالة الأمر للأستاذ'}
+  ]:[
+    {icon:'⚽',color:'#f39c12',title:'إحضار الوسائل',desc:'يتسلم مفتاح المخزن ويُخرج الكرات والشواخص والحبال وجميع الوسائل قبل الحصة'},
+    {icon:'🧹',color:'var(--blu)',title:'إعادة الوسائل',desc:'يجمع ويرتب ويُعيد كل الوسائل إلى المخزن بعد الحصة ويتحقق من اكتمال العدة'},
+    {icon:'📦',color:'var(--g)',title:'جرد الوسائل',desc:'يُبلغ الأستاذ فوراً عن أي وسيلة تالفة أو مفقودة ويدوّن الملاحظات'},
+    {icon:'🔑',color:'var(--gold)',title:'حفظ مفتاح المخزن',desc:'مسؤول عن سلامة المفتاح طوال الحصة وتسليمه للأستاذ في نهايتها'}
+  ];
+
+  var tasksHTML=tasks.map(function(t){
+    return '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid '+t.color+'">'+
+      '<div style="font-size:11px;font-weight:900;color:'+t.color+';margin-bottom:5px">'+t.icon+' '+t.title+'</div>'+
+      '<div style="font-size:12px;color:var(--tx2);line-height:1.6">'+t.desc+'</div></div>';
+  }).join('');
+
   ov.innerHTML=
-    '<div style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;overflow:hidden">'+
-    '<div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;gap:10px;background:rgba(218,165,32,.08)">'+
-    '<span style="font-size:24px">👑</span>'+
-    '<div style="flex:1"><div style="font-size:14px;font-weight:900;color:var(--gold)">بطاقة مهام القائد</div>'+
+    '<div style="background:var(--p1);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden">'+
+    '<div style="padding:14px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;gap:10px;background:'+bgColor+'">'+
+    '<span style="font-size:26px">'+icon+'</span>'+
+    '<div style="flex:1"><div style="font-size:14px;font-weight:900;color:'+color+'">'+title+'</div>'+
     '<div style="font-size:11px;color:var(--tx3)">'+stu.name+' · '+cls.name+'</div></div>'+
     '<button onclick="closeCaptainSheet()" style="width:34px;height:34px;background:var(--rb);border:none;border-radius:9px;color:var(--red);font-size:16px;cursor:pointer;font-weight:900">✕</button>'+
     '</div>'+
-    '<div style="overflow-y:auto;flex:1;padding:16px">'+
-    '<div style="display:flex;flex-direction:column;gap:10px">'+
-    (role==='equipment'?
-      '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid #f39c12">'+
-      '<div style="font-size:11px;font-weight:900;color:#f39c12;margin-bottom:6px">⚽ إحضار الوسائل</div>'+
-      '<div style="font-size:12px;color:var(--tx2)">يتسلم مفتاح المخزن ويُخرج الكرات والشواخص والحبال وجميع الوسائل قبل الحصة</div></div>'+
-      '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--blu)">'+
-      '<div style="font-size:11px;font-weight:900;color:var(--blu);margin-bottom:6px">🧹 إعادة الوسائل</div>'+
-      '<div style="font-size:12px;color:var(--tx2)">يجمع ويرتب ويُعيد كل الوسائل إلى المخزن بعد الحصة ويتحقق من اكتمال العدة</div></div>'+
-      '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--g)">'+
-      '<div style="font-size:11px;font-weight:900;color:var(--g);margin-bottom:6px">📦 جرد الوسائل</div>'+
-      '<div style="font-size:12px;color:var(--tx2)">يُبلغ الأستاذ عن أي وسيلة تالفة أو مفقودة فور اكتشافها</div></div>'
-    :
-      '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--g)">'+
-      '<div style="font-size:11px;font-weight:900;color:var(--g);margin-bottom:6px">🏃 قيادة الإحماء</div>'+
-      '<div style="font-size:12px;color:var(--tx2)">يقود '+stu.name+' الإحماء الديناميكي 7 دقائق قبل الحصة</div></div>'+
-      '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--blu)">'+
-      '<div style="font-size:11px;font-weight:900;color:var(--blu);margin-bottom:6px">⏱️ إدارة الوقت</div>'+
-      '<div style="font-size:12px;color:var(--tx2)">مسؤول عن توقيت المحطات وإبلاغ الأستاذ عند انتهاء كل جولة</div></div>'+
-      '<div style="background:var(--p2);border-radius:12px;padding:12px 14px;border-right:3px solid var(--gold)">'+
-      '<div style="font-size:11px;font-weight:900;color:var(--gold);margin-bottom:6px">📋 تسجيل الأداء</div>'+
-      '<div style="font-size:12px;color:var(--tx2)">يسجل نتائج المحطات الفرعية ويبلغ الأستاذ بالملاحظات</div></div>'
-    )+
-    '<div style="background:rgba(218,165,32,.08);border-radius:12px;padding:10px 14px;border:1px solid rgba(218,165,32,.2)">'+
-      '<div style="font-size:11px;font-weight:900;color:var(--gold)">🏆 المكافأة التلقائية</div>'+
-      '<div style="font-size:12px;color:var(--tx2);margin-top:4px">تمت إضافة <strong>+1 إبداع</strong> للمراقبة المستمرة</div>'+
-    '</div></div></div></div>';
+    '<div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:10px">'+
+    tasksHTML+
+    '<div style="background:'+bgColor+';border-radius:12px;padding:10px 14px;border:1px solid '+color.replace('var(--gold)','rgba(218,165,32,.3)').replace('rgba(218,165,32,.08)','rgba(243,156,18,.3)')+'">'+
+    '<div style="font-size:11px;font-weight:900;color:'+color+'">🏆 المكافأة التلقائية</div>'+
+    '<div style="font-size:12px;color:var(--tx2);margin-top:4px">تمت إضافة <strong>+1 نقطة إبداع</strong> في المراقبة المستمرة لهذا الفصل</div>'+
+    '</div></div></div>';
   document.body.appendChild(ov);
 }
-
-// ── Volume Key Hardware Buttons ──────────────────────────────
-(function(){
-  var _lv={k:-1,t:0};
-  document.addEventListener('keydown',function(e){
-    if(!SW4.running)return;
-    var lane=-1;
-    if(e.code==='AudioVolumeUp'||e.key==='AudioVolumeUp')lane=0;
-    else if(e.code==='AudioVolumeDown'||e.key==='AudioVolumeDown')lane=1;
-    if(lane===-1)return;
-    e.preventDefault();e.stopPropagation();
-    var now=performance.now();
-    if(_lv.k===lane&&now-_lv.t<500)return;
-    _lv={k:lane,t:now};
-    sw4StopLane(lane);
-    toast('🔒','حارة '+(lane+1)+'  مفتاح الصوت','su',1200);
-  },{passive:false,capture:true});
-})();
-
 
 function openExemptionList(){
   var sch=D.settings.school||'الثانوية';
@@ -3979,6 +3919,31 @@ function assignRole(sid,role){
   snapshot('تعيين دور');SD();rHome();
 }
 
+
+function onScSelCard(val,btn){
+  document.querySelectorAll('.sc-act-btn').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+  // Mimic select change
+  var fakeEl={value:val};
+  onScSel.call({value:val},{target:{value:val}},val);
+}
+// Patch onScSel to accept direct value
+var _origOnScSel=onScSel;
+function onScSel(e,directVal){
+  var v=directVal||document.getElementById('sc-sel').value||
+    (e&&e.target?e.target.value:'');
+  if(!v){
+    document.getElementById('sc-ind').style.display='none';
+    document.getElementById('sc-col').style.display='none';
+    return;
+  }
+  // Show sections
+  document.getElementById('sc-ind').style.display=AF[v]?'block':'none';
+  document.getElementById('sc-col').style.display=AJ[v]?'block':'none';
+  if(AF[v])renderScInd(v);
+  if(AJ[v])renderScCol(v);
+}
+
 render('home');
 
 
@@ -3995,11 +3960,11 @@ if('serviceWorker' in navigator && location.hostname !== 'www.claudeusercontent.
             // Show update banner
             var b=document.createElement('div');
             b.id='update-banner';
-            b.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#00d97e;color:#0a1f0e;padding:12px 20px;border-radius:12px;font-weight:900;font-size:13px;z-index:99999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.3);cursor:pointer;font-family:sans-serif;direction:rtl';
-            b.innerHTML='🔄 تحديث جديد متاح! اضغط لتطبيقه';
-            b.onclick=function(){window.location.reload();};
+            b.style.cssText='position:fixed;bottom:72px;left:12px;right:12px;background:linear-gradient(135deg,#00875a,#00d97e);color:#fff;padding:14px 16px;border-radius:14px;font-weight:800;font-size:13px;z-index:99999;box-shadow:0 6px 24px rgba(0,0,0,.4);font-family:sans-serif;direction:rtl;display:flex;align-items:center;gap:10px';
+            b.innerHTML='<span style="font-size:22px">🔄</span><div style="flex:1"><div style="font-weight:900;font-size:13px">تحديث جديد متاح!</div><div style="font-size:10px;opacity:.85;margin-top:2px">جودة مشاركة الأدوار، بطاقات الأنشطة، تحسينات الكرونو</div></div><button onclick="window.location.reload()" style="background:rgba(255,255,255,.25);border:none;border-radius:8px;color:#fff;padding:8px 14px;font-weight:900;cursor:pointer;font-size:12px;white-space:nowrap">تطبيق</button>';
+            b.querySelector('button').onclick=function(){window.location.reload();};
             document.body.appendChild(b);
-            setTimeout(function(){if(b.parentNode)b.parentNode.removeChild(b);},15000);
+            setTimeout(function(){if(b.parentNode)b.parentNode.removeChild(b);},20000);
           }
         });
       });
