@@ -409,6 +409,30 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
 
 .sc-act-btn:active{transform:scale(.94);}
 .sc-act-btn.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--g);}
+
+/* ── Scale Print Buttons ─────────────────── */
+.sc-print-row{display:flex;gap:8px;margin-bottom:10px}
+.sc-print-btn{flex:1;padding:12px 8px;border:none;border-radius:12px;font-family:var(--ff);font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;touch-action:manipulation;transition:transform .12s}
+.sc-print-btn:active{transform:scale(.95)}
+.sc-print-ind{background:linear-gradient(135deg,#00875a,#00d97e);color:#fff}
+.sc-print-col{background:linear-gradient(135deg,#1a56db,#4ea5ff);color:#fff}
+/* ── Lock Overlay ──────────────────────────── */
+.lock-overlay{position:absolute;inset:0;background:rgba(14,30,18,.55);backdrop-filter:blur(2px);border-radius:var(--r);z-index:20;display:flex;align-items:center;justify-content:center;pointer-events:all}
+.lock-overlay-ic{font-size:28px;opacity:.9}
+.ev-lock-btn{width:100%;padding:12px;border-radius:12px;border:1.5px solid;font-family:var(--ff);font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation;transition:all .15s;margin-bottom:10px}
+.ev-lock-btn.locked{background:rgba(255,89,89,.12);border-color:rgba(255,89,89,.4);color:var(--red)}
+.ev-lock-btn.unlocked{background:rgba(0,217,126,.1);border-color:rgba(0,217,126,.3);color:var(--g)}
+/* ── Lottery Module ────────────────────────── */
+.lottery-wrap{background:var(--p2);border:1px solid var(--ln);border-radius:16px;padding:16px;margin-bottom:14px}
+.lottery-counter{text-align:center;font-size:11px;font-weight:800;color:var(--tx3);margin-bottom:12px;letter-spacing:.5px}
+.lottery-btn{width:100%;padding:16px;border:none;border-radius:14px;font-family:var(--ff);font-size:15px;font-weight:900;cursor:pointer;touch-action:manipulation;transition:transform .12s,box-shadow .12s;margin-bottom:8px}
+.lottery-btn:active{transform:scale(.96)}
+.lottery-main{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;box-shadow:0 4px 18px rgba(124,58,237,.3)}
+.lottery-reset{background:var(--p3);border:1.5px solid var(--ln);color:var(--tx2);font-size:13px;padding:12px}
+.lottery-result{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;backdrop-filter:blur(12px)}
+.lottery-name{font-size:28px;font-weight:900;color:#fff;text-align:center;padding:0 24px;line-height:1.3;text-shadow:0 0 30px rgba(168,85,247,.8)}
+.lottery-close{padding:14px 32px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:#fff;font-family:var(--ff);font-size:14px;font-weight:800;cursor:pointer}
+.lottery-done{font-size:16px;font-weight:900;color:var(--gold);text-align:center;padding:16px;background:rgba(218,165,32,.1);border-radius:12px;border:1px solid rgba(218,165,32,.2)}
 </style>
 </head>
 <body>
@@ -554,6 +578,11 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
     </div>
   </div>
   <div class="scrl">
+    <div style="padding:10px 16px 0">
+      <button class="ev-lock-btn unlocked" id="ev-lock-btn" onclick="toggleGradeLedgerLock()">
+        🔓 تحرير الإدخال
+      </button>
+    </div>
     <div class="evh">
       <div class="evn"><span id="ev-tot">—</span><span class="mx">/20</span></div>
       <div class="evlb" id="ev-lb">نقطة الفرض</div>
@@ -627,6 +656,21 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
       <div id="acts-body-inline"></div>
       <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
         <button class="btn btn-g btn-fw" onclick="saveActSelInline()"><svg><use href="#i-chk"/></svg>حفظ الأنشطة</button></div>
+    </div>
+    <!-- LOTTERY MODULE -->
+    <div style="padding:16px 16px 0">
+      <div class="lottery-wrap">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:20px">🎲</span>
+          <div>
+            <div style="font-size:13px;font-weight:900;color:var(--pnk)">القرعة البيداغوجية</div>
+            <div style="font-size:10px;color:var(--tx3)">اختيار عشوائي عادل — يستثني الغائبين</div>
+          </div>
+        </div>
+        <div class="lottery-counter" id="lottery-counter">—</div>
+        <button class="lottery-btn lottery-main" onclick="runLottery()">🎲 إجراء القرعة</button>
+        <button class="lottery-btn lottery-reset" onclick="resetLottery()">🔄 إعادة ضبط القرعة للجميع</button>
+      </div>
     </div>
     <div class="sp28"></div>
   </div>
@@ -733,7 +777,10 @@ body{max-width:480px;margin:0 auto;display:flex;flex-direction:column;-webkit-fo
           <option value="handball">🤾 كرة يد</option>
           <option value="football">⚽ كرة القدم</option>
         </optgroup>
-      </select></div>
+      </select>
+      <button onclick="printBothScales()" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(135deg,#00875a,#00d97e);border:none;border-radius:12px;color:#fff;font-family:var(--ff);font-size:13px;font-weight:900;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px">
+        🖨️ طباعة سلم التنقيط (فردي + جماعي)
+      </button></div>
     </div>
     <div id="sc-ind" style="display:none">
       <div class="sced">
@@ -1143,7 +1190,7 @@ function rHome(){
             ?'<div style="padding:3px 8px;background:rgba(255,89,89,.15);border-radius:7px;font-size:11px;font-weight:800;color:var(--red)">معفى</div>'
             :'<div style="font-family:var(--fn);font-size:26px;color:var(--tx3)">—</div>';
       const sIdx=clsStus.findIndex(x=>x.id===s.id);
-      h+='<div class="srow-wrap">'+
+      h+='<div class="srow-wrap" data-sid="'+s.id+'">'+
         '<div class="srow" onclick="openStu(\''+s.id+'\')">'+
           '<div class="snum">'+String(i+1).padStart(2,'0')+'</div>'+
           '<div class="sav '+(s.gender==='male'?'m':'f')+'">'+inits(s.name)+'</div>'+
@@ -1174,6 +1221,7 @@ function rHome(){
   }
   h+='</div>';
   body.innerHTML=h;
+  rfrmFocus(false);
 }
 
 // STUDENT
@@ -3804,6 +3852,354 @@ function assignRole(sid,role){
 // Safety alias for cached clients
 function renderScInd(k){if(k)rScEd();}
 function renderScCol(){rScales();}
+
+// ═══════════════════════════════════════════════════════════
+// 1. PRINT SCALES — Selected individual + collective
+// ═══════════════════════════════════════════════════════════
+
+
+
+
+
+
+// ═══════════════════════════════════════════════════════════
+// 2. GRADE LEDGER LOCK
+// ═══════════════════════════════════════════════════════════
+var LEDGER_LOCKED=false;
+
+function toggleGradeLedgerLock(){
+  LEDGER_LOCKED=!LEDGER_LOCKED;
+  var btn=document.getElementById('ev-lock-btn');
+  var scrl=document.querySelector('#s-ev .scrl');
+  if(LEDGER_LOCKED){
+    // Lock all inputs
+    if(scrl){
+      scrl.querySelectorAll('input[type="number"],input[type="text"]').forEach(function(inp){
+        inp.setAttribute('disabled','disabled');
+        inp.dataset.wasEnabled='1';
+        inp.parentElement.style.position='relative';
+      });
+      // Add frosted overlay
+      var ov=document.createElement('div');
+      ov.id='ledger-frost';
+      ov.style.cssText='position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.0);pointer-events:all';
+      ov.innerHTML='<div style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(255,89,89,.15);backdrop-filter:blur(4px);border:1px solid rgba(255,89,89,.3);border-radius:14px;padding:10px 20px;color:var(--red);font-weight:900;font-size:13px;font-family:var(--ff);white-space:nowrap">🔒 النقاط مقفلة — اضغط إلغاء القفل للتعديل</div>';
+      document.body.appendChild(ov);
+    }
+    if(btn){btn.innerHTML='🔒 إلغاء القفل';btn.className='ev-lock-btn locked';}
+    toast('🔒 مقفل','لا يمكن تعديل النقاط','wa',2000);
+  }else{
+    // Unlock
+    if(scrl){
+      scrl.querySelectorAll('input[data-was-enabled]').forEach(function(inp){
+        inp.removeAttribute('disabled');
+        delete inp.dataset.wasEnabled;
+      });
+    }
+    var frost=document.getElementById('ledger-frost');
+    if(frost)frost.remove();
+    if(btn){btn.innerHTML='🔓 تحرير الإدخال';btn.className='ev-lock-btn unlocked';}
+    toast('🔓 مفتوح','يمكن تعديل النقاط الآن','su',1500);
+  }
+}
+
+// Reset lock when leaving eval screen
+function resetLedgerLock(){
+  if(LEDGER_LOCKED){LEDGER_LOCKED=true;toggleGradeLedgerLock();}
+}
+
+// ═══════════════════════════════════════════════════════════
+// 3. SMART ANTI-BIAS LOTTERY SELECTOR
+// ═══════════════════════════════════════════════════════════
+var LOTTERY={called:[],round:0};
+
+function getLotteryPool(){
+  if(!S.cid) return [];
+  var stus=D.students.filter(function(s){return s.classId===S.cid;});
+  var tk=S.term||'t1';
+  return stus.filter(function(s){
+    // Exclude exempted students
+    initStu(s);
+    if(s.terms[tk].exempted) return false;
+    // Exclude absent students (ses has 0 = absent)
+    var mc=s.terms[tk].mc;
+    var absentCount=(mc.ses||[]).filter(function(v){return v===0;}).length;
+    var totalSes=(mc.ses||[]).length;
+    // If ALL sessions are absent, exclude
+    if(totalSes>0&&absentCount===totalSes) return false;
+    // Exclude already called this round
+    if(LOTTERY.called.indexOf(s.id)!==-1) return false;
+    return true;
+  });
+}
+
+function getAllPresent(){
+  if(!S.cid) return [];
+  var stus=D.students.filter(function(s){return s.classId===S.cid;});
+  var tk=S.term||'t1';
+  return stus.filter(function(s){
+    initStu(s);
+    if(s.terms[tk].exempted) return false;
+    var mc=s.terms[tk].mc;
+    var absentCount=(mc.ses||[]).filter(function(v){return v===0;}).length;
+    var totalSes=(mc.ses||[]).length;
+    if(totalSes>0&&absentCount===totalSes) return false;
+    return true;
+  });
+}
+
+function updateLotteryCounter(){
+  var pool=getLotteryPool();
+  var total=getAllPresent();
+  var el=document.getElementById('lottery-counter');
+  if(!el) return;
+  if(!S.cid){el.textContent='اختر قسماً أولاً';return;}
+  el.textContent='المتبقون في القرعة: '+pool.length+' / '+total.length;
+}
+
+function runLottery(){
+  if(!S.cid){toast('تنبيه','اختر قسماً أولاً','wa');return;}
+  var pool=getLotteryPool();
+  if(pool.length===0){
+    // Show completion message
+    var el=document.getElementById('lottery-counter');
+    if(el) el.innerHTML='<span style="color:var(--gold)">🏁 اكتملت المحاولات لجميع الحاضرين</span>';
+    toast('🏁 اكتمل','جميع التلاميذ الحاضرين أجابوا','su',2500);
+    return;
+  }
+  // Random fair selection
+  var idx=Math.floor(Math.random()*pool.length);
+  var chosen=pool[idx];
+  LOTTERY.called.push(chosen.id);
+
+  // Play chime
+  playLotteryChime();
+
+  // Show overlay
+  var total=getAllPresent();
+  var remaining=pool.length-1;
+  document.getElementById('lottery-name-display').textContent=chosen.name;
+  document.getElementById('lottery-remain-overlay').textContent=
+    'المتبقون: '+remaining+' / '+total.length;
+  document.getElementById('lottery-overlay').style.display='flex';
+
+  updateLotteryCounter();
+}
+
+function closeLotteryOverlay(){
+  document.getElementById('lottery-overlay').style.display='none';
+  updateLotteryCounter();
+}
+
+function resetLottery(){
+  LOTTERY.called=[];
+  LOTTERY.round++;
+  updateLotteryCounter();
+  toast('🔄 إعادة الضبط','جميع التلاميذ عادوا للقرعة','su',1800);
+}
+
+function playLotteryChime(){
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    var ctx=new AC();
+    var notes=[523,659,784,1047]; // C5 E5 G5 C6
+    notes.forEach(function(freq,i){
+      var osc=ctx.createOscillator();
+      var gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine';
+      osc.frequency.value=freq;
+      var t=ctx.currentTime+i*0.12;
+      gain.gain.setValueAtTime(0,t);
+      gain.gain.linearRampToValueAtTime(0.3,t+0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+      osc.start(t); osc.stop(t+0.4);
+    });
+    setTimeout(function(){try{ctx.close();}catch(e){}},800);
+  }catch(e){}
+}
+
+// Update lottery counter when MC screen opens
+var _origRMC=rMC;
+rMC=function(){
+  _origRMC();
+  setTimeout(updateLotteryCounter,50);
+};
+
+
+// ═══════════════════════════════════════════════════════════
+// COMBINED SCALE PRINT — Individual (selected) + Collective
+// ═══════════════════════════════════════════════════════════
+function printBothScales(){
+  var actKey = S.sact || document.getElementById('sc-sel').value;
+  if(!actKey || actKey==='collective'){
+    toast('تنبيه','اختر نشاطاً فردياً أولاً من القائمة','wa',2500);
+    return;
+  }
+  var ac = AF[actKey];
+  if(!ac){ toast('خطأ','النشاط غير موجود','er'); return; }
+  var sch = D.settings.school||'الثانوية';
+  var yr  = D.settings.year||'—';
+  var levels = ['AS1','AS2','AS3','TC'];
+  var lvlN   = {AS1:'1 ثانوي',AS2:'2 ثانوي',AS3:'3 ثانوي',TC:'جذع مشترك'};
+  var gnN    = {male:'ذكور',female:'إناث'};
+
+  // ── CSS ─────────────────────────────────────────────────
+  var css=[
+    'body{font-family:Arial,sans-serif;direction:rtl;margin:0;padding:20px;font-size:12px}',
+    '.page-hdr{text-align:center;border-bottom:2px solid #00d97e;padding-bottom:8px;margin-bottom:14px}',
+    '.school{font-size:15px;font-weight:800;color:#00875a}',
+    '.yr{font-size:11px;color:#666;margin-top:2px}',
+    'h1{font-size:15px;color:#1a3d2b;margin:8px 0 2px}',
+    'h2{font-size:12px;color:#555;margin:0 0 12px}',
+    '.sec-lbl{background:#e8f5e9;color:#1a3d2b;font-weight:800;padding:7px 10px;margin:12px 0 4px;border-right:4px solid #00d97e;font-size:12px}',
+    '.col-lbl{background:#e8f0fe;color:#1a56db;font-weight:800;padding:7px 10px;margin:18px 0 6px;border-right:4px solid #4ea5ff;font-size:13px}',
+    'table{border-collapse:collapse;width:100%;margin-bottom:10px;page-break-inside:avoid}',
+    'th{background:#1a3d2b;color:#00d97e;padding:7px 5px;border:1px solid #ccc;font-size:11px}',
+    '.th-col{background:#1a3d4b;color:#4ea5ff}',
+    'td{padding:6px 5px;border:1px solid #ddd;text-align:center}',
+    'tr:nth-child(even){background:#f7f7f7}',
+    '.grade{font-weight:800}',
+    '.pb{page-break-before:always}',
+    '.footer{text-align:center;color:#aaa;font-size:10px;margin-top:16px;padding-top:8px;border-top:1px solid #eee}',
+    '.close-bar{position:fixed;top:0;left:0;right:0;background:#1a3d2b;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-family:Arial;direction:rtl}',
+    '.close-bar span{font-size:13px;font-weight:800}',
+    '.close-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:8px;color:#fff;padding:7px 16px;font-size:13px;font-weight:800;cursor:pointer}',
+    '.print-btn{background:#00d97e;border:none;border-radius:8px;color:#1a3d2b;padding:7px 16px;font-size:13px;font-weight:800;cursor:pointer}',
+    '.spacer{height:46px}',
+    '@media print{.close-bar{display:none!important}.spacer{display:none}.pb{page-break-before:always}}'
+  ].join('');
+
+  // ── INDIVIDUAL SCALE ────────────────────────────────────
+  var body = '';
+  levels.forEach(function(lv, li){
+    ['male','female'].forEach(function(gn, gi){
+      if(li>0||gi>0) body += '<div class="pb"></div>';
+      body += '<div class="sec-lbl">'+ac.n+' — '+lvlN[lv]+' — '+gnN[gn]+'</div>';
+      // Fetch rows from D.scales
+      var rows = [];
+      try{
+        var sc = D.scales&&D.scales[actKey]?D.scales[actKey]:(DS&&DS[actKey]?DS[actKey]:null);
+        if(sc&&sc[lv]&&sc[lv][gn]) rows = sc[lv][gn];
+      }catch(e){}
+      body += '<table><thead><tr>';
+      for(var t=1;t<=ac.tr;t++) body+='<th>محاولة '+t+'</th>';
+      body += '<th>النقطة /20</th><th>التقدير</th></tr></thead><tbody>';
+      if(rows&&rows.length){
+        rows.forEach(function(r){
+          var g=parseFloat(r.g||r.grade||0);
+          var bg=g>=16?'#e8f5e9':g>=12?'#fffde7':g>=8?'#fff3e0':'#fde8e8';
+          body+='<tr style="background:'+bg+'"><td>';
+          if(Array.isArray(r.tr)){
+            body+=r.tr.join('</td><td>');
+          }else{
+            var vals=[];for(var t2=1;t2<=ac.tr;t2++)vals.push(r['t'+t2]||'');
+            body+=vals.join('</td><td>');
+          }
+          var clr=g>=16?'#1a8a30':g>=12?'#8a6a00':g>=8?'#c55a00':'#c0392b';
+          var lbl=g>=16?'ممتاز':g>=12?'جيد':g>=8?'متوسط':'ضعيف';
+          body+='</td><td class="grade" style="color:'+clr+'">'+fmt(g)+'</td>';
+          body+='<td style="font-weight:700;color:'+clr+'">'+lbl+'</td></tr>';
+        });
+      }else{
+        body+='<tr><td colspan="'+(ac.tr+2)+'" style="color:#aaa;padding:14px">لم يُعدَّل السلم — السلم الافتراضي مطبق</td></tr>';
+      }
+      body+='</tbody></table>';
+    });
+  });
+
+  // ── COLLECTIVE SCALE ─────────────────────────────────────
+  body += '<div class="pb"></div>';
+  body += '<div class="col-lbl">⚖️ سلم الأنشطة الجماعية (موحد)</div>';
+  body += '<table><thead><tr>'+
+    '<th class="th-col">المهارة الحركية / العناصر الفنية</th>'+
+    '<th class="th-col">النقطة /20</th>'+
+    '<th class="th-col">التقدير</th></tr></thead><tbody>';
+  var cTxt={d:'#c0392b',c:'#8a6a00',b:'#1a8a30',a:'#7b2fbe'};
+  var cBg ={d:'#fde8e8',c:'#fffde7',b:'#e8f5e9',a:'#f3e8ff'};
+  var cLbl={d:'ضعيف',c:'متوسط',b:'جيد',a:'ممتاز'};
+  CG.forEach(function(g){
+    body+='<tr style="background:'+cBg[g.t]+'">'+
+      '<td style="text-align:right;padding:8px 10px">'+g.l+'</td>'+
+      '<td class="grade" style="color:'+cTxt[g.t]+'">'+fmt(g.g)+'</td>'+
+      '<td style="font-weight:700;color:'+cTxt[g.t]+'">'+cLbl[g.t]+'</td></tr>';
+  });
+  body+='</tbody></table>';
+
+  // ── FULL HTML ─────────────────────────────────────────────
+  var html='<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">'+
+    '<title>سلم التنقيط — '+ac.n+' + الجماعي</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="close-bar">'+
+    '<button class="close-btn" onclick="window.close()">✕ إغلاق</button>'+
+    '<span>'+sch+' · سلم التنقيط · '+yr+'</span>'+
+    '<button class="print-btn" onclick="window.print()">🖨️ طباعة</button>'+
+    '</div>'+
+    '<div class="spacer"></div>'+
+    '<div class="page-hdr">'+
+    '<div class="school">'+sch+'</div>'+
+    '<div class="yr">الموسم الدراسي: '+yr+'</div>'+
+    '</div>'+
+    '<h1>⚖️ سلم التنقيط — '+ac.n+' (فردي) + الأنشطة الجماعية</h1>'+
+    '<h2>مادة التربية البدنية والرياضية — دلباز محمد</h2>'+
+    body+
+    '<div class="footer">'+sch+' · دلباز محمد · '+yr+' · Delbaz_EPS</div>'+
+    '</body></html>';
+
+  var w=window.open('','_blank','width=700,height=750');
+  if(w){w.document.write(html);w.document.close();}
+  else{
+    var b=document.createElement('a');
+    b.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
+    b.download='سلم_التنقيط_'+actKey+'.html';b.click();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROSTER FOCUS RETENTION MANAGER
+// ═══════════════════════════════════════════════════════════
+function rfrmSave(sid){
+  try{ sessionStorage.setItem('lastAccessedStudentId', sid); }catch(e){}
+}
+function rfrmGet(){
+  try{ return sessionStorage.getItem('lastAccessedStudentId'); }catch(e){ return null; }
+}
+function rfrmFocus(advanceToNext){
+  var sid = rfrmGet();
+  if(!sid || !S.cid) return;
+  var stus = D.students.filter(function(s){ return s.classId===S.cid; });
+  if(!stus.length) return;
+  var idx = stus.findIndex(function(s){ return s.id===sid; });
+  if(idx < 0) return;
+  // Advance to next if requested (boundary-safe)
+  if(advanceToNext && idx < stus.length-1) idx++;
+  var target = stus[idx];
+  if(!target) return;
+  // Find DOM row
+  setTimeout(function(){
+    var el = document.querySelector('[data-sid="'+target.id+'"]') ||
+             document.querySelector('.srow-wrap:nth-child('+(idx+1)+')');
+    if(!el){
+      // Try by content search
+      var all = document.querySelectorAll('.srow-wrap');
+      all.forEach(function(row){
+        if(row.textContent.indexOf(target.name)!==-1) el=row;
+      });
+    }
+    if(el){
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+      el.classList.add('active-field-focus');
+      setTimeout(function(){ el.classList.remove('active-field-focus'); }, 1500);
+    }
+  }, 180);
+}
+
+// CSS for focus highlight
+var rfrmStyle = document.createElement('style');
+rfrmStyle.textContent = '@keyframes rfrmFlash{0%,100%{background:transparent}50%{background:rgba(0,217,126,.18)}}'+
+  '.active-field-focus{animation:rfrmFlash .4s ease 3;border-radius:var(--r);box-shadow:0 0 0 2px rgba(0,217,126,.4)!important;}';
+document.head.appendChild(rfrmStyle);
 render('home');
 
 
